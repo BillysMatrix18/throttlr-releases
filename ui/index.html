@@ -1,0 +1,3324 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Throttlr</title>
+
+<!-- Inline loader styles render BEFORE everything else loads -->
+<style>
+  *{box-sizing:border-box;margin:0;padding:0}
+  html,body{background:#07090a;color:#e8e6d8;height:100%;overflow:hidden}
+  body{font-family:Consolas,'Courier New',monospace}
+
+  /* =====================================================================
+     LOADER — full inline so it renders BEFORE any external file/font/CDN.
+     Animated mesh, drifting particles, pulsing rings, system-check rows.
+     ===================================================================== */
+
+  #loader{
+    position:fixed; inset:0; z-index:99999;
+    background:#070912;
+    display:flex; flex-direction:column;
+    align-items:center; justify-content:center;
+    overflow:hidden;
+    padding:60px 40px;
+    transition:opacity .65s cubic-bezier(.4,0,.2,1), transform .65s cubic-bezier(.4,0,.2,1);
+  }
+  #loader.fade-out{ opacity:0; transform:scale(.97); pointer-events:none; }
+
+  /* ----- animated mesh-gradient backdrop ----- */
+  #loader .ldr-mesh{
+    position:absolute; inset:-20%; z-index:0;
+    background:
+      radial-gradient(circle at 20% 30%, rgba(127,191,255,.22), transparent 45%),
+      radial-gradient(circle at 80% 70%, rgba(167,139,250,.18), transparent 45%),
+      radial-gradient(circle at 50% 50%, rgba(102,229,184,.10), transparent 60%),
+      radial-gradient(circle at 30% 80%, rgba(255,184,0,.08),  transparent 50%);
+    filter:blur(40px);
+    animation:mesh-drift 18s ease-in-out infinite;
+  }
+  @keyframes mesh-drift{
+    0%,100%{ transform:translate(0,0) scale(1); }
+    33%    { transform:translate(-3%,2%) scale(1.05); }
+    66%    { transform:translate(2%,-3%) scale(.97); }
+  }
+
+  /* ----- subtle grid ----- */
+  #loader .ldr-grid{
+    position:absolute; inset:0; z-index:1; pointer-events:none;
+    background-image:
+      linear-gradient(rgba(127,191,255,.045) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(127,191,255,.045) 1px, transparent 1px);
+    background-size:48px 48px;
+    mask-image:radial-gradient(ellipse at center, #000 30%, transparent 75%);
+    -webkit-mask-image:radial-gradient(ellipse at center, #000 30%, transparent 75%);
+    animation:grid-drift 22s linear infinite;
+  }
+  @keyframes grid-drift{
+    from{ background-position:0 0,0 0; }
+    to  { background-position:48px 48px,48px 48px; }
+  }
+
+  /* ----- corner brackets that draw in on entry ----- */
+  #loader .ldr-bracket{
+    position:absolute; width:56px; height:56px; z-index:3;
+    border:2px solid #7fbfff;
+    opacity:0;
+    animation:bracket-in .7s .15s cubic-bezier(.4,0,.2,1) forwards;
+    box-shadow:0 0 18px rgba(127,191,255,.30);
+  }
+  @keyframes bracket-in{ to{ opacity:.85; } }
+  #loader .ldr-bracket.tl{ top:24px; left:24px; border-right:none; border-bottom:none; }
+  #loader .ldr-bracket.tr{ top:24px; right:24px; border-left:none; border-bottom:none; }
+  #loader .ldr-bracket.bl{ bottom:24px; left:24px; border-right:none; border-top:none; }
+  #loader .ldr-bracket.br{ bottom:24px; right:24px; border-left:none; border-top:none; }
+
+  /* ----- floating particles (CSS-only, no JS) ----- */
+  #loader .ldr-particles{ position:absolute; inset:0; z-index:1; pointer-events:none; }
+  #loader .ldr-particles span{
+    position:absolute; bottom:-20px;
+    width:3px; height:3px; border-radius:50%;
+    background:#7fbfff;
+    box-shadow:0 0 6px #7fbfff;
+    opacity:0;
+    animation:particle-float 9s linear infinite;
+  }
+  @keyframes particle-float{
+    0%   { transform:translateY(0)        scale(.6); opacity:0; }
+    8%   { opacity:.7; }
+    50%  { transform:translateY(-50vh)    scale(1); }
+    92%  { opacity:.7; }
+    100% { transform:translateY(-110vh)   scale(.4); opacity:0; }
+  }
+  /* spread the particles across the width with hardcoded positions */
+  #loader .ldr-particles span:nth-child(1)  { left:6%;  animation-delay:.0s;  animation-duration:8s;  }
+  #loader .ldr-particles span:nth-child(2)  { left:14%; animation-delay:1.2s; animation-duration:11s; background:#a78bfa; box-shadow:0 0 6px #a78bfa; }
+  #loader .ldr-particles span:nth-child(3)  { left:22%; animation-delay:2.4s; animation-duration:9s;  }
+  #loader .ldr-particles span:nth-child(4)  { left:30%; animation-delay:.6s;  animation-duration:12s; background:#66e5b8; box-shadow:0 0 6px #66e5b8; }
+  #loader .ldr-particles span:nth-child(5)  { left:38%; animation-delay:3.8s; animation-duration:8s;  }
+  #loader .ldr-particles span:nth-child(6)  { left:46%; animation-delay:1.8s; animation-duration:10s; background:#a78bfa; box-shadow:0 0 6px #a78bfa; }
+  #loader .ldr-particles span:nth-child(7)  { left:54%; animation-delay:.3s;  animation-duration:9.5s;}
+  #loader .ldr-particles span:nth-child(8)  { left:62%; animation-delay:2.6s; animation-duration:11s; }
+  #loader .ldr-particles span:nth-child(9)  { left:70%; animation-delay:1.0s; animation-duration:8.5s;background:#66e5b8; box-shadow:0 0 6px #66e5b8; }
+  #loader .ldr-particles span:nth-child(10) { left:78%; animation-delay:3.2s; animation-duration:10s; }
+  #loader .ldr-particles span:nth-child(11) { left:86%; animation-delay:.9s;  animation-duration:9s;  background:#a78bfa; box-shadow:0 0 6px #a78bfa; }
+  #loader .ldr-particles span:nth-child(12) { left:94%; animation-delay:2.1s; animation-duration:11s; }
+  #loader .ldr-particles span:nth-child(13) { left:10%; animation-delay:4.6s; animation-duration:9.5s;}
+  #loader .ldr-particles span:nth-child(14) { left:35%; animation-delay:5.1s; animation-duration:8s;  background:#66e5b8; box-shadow:0 0 6px #66e5b8; }
+  #loader .ldr-particles span:nth-child(15) { left:58%; animation-delay:4.0s; animation-duration:10.5s;}
+  #loader .ldr-particles span:nth-child(16) { left:82%; animation-delay:5.5s; animation-duration:9s;  background:#a78bfa; box-shadow:0 0 6px #a78bfa; }
+  #loader .ldr-particles span:nth-child(17) { left:18%; animation-delay:6.2s; animation-duration:8.5s;}
+  #loader .ldr-particles span:nth-child(18) { left:50%; animation-delay:6.8s; animation-duration:11s; }
+  #loader .ldr-particles span:nth-child(19) { left:74%; animation-delay:5.8s; animation-duration:9s;  background:#66e5b8; box-shadow:0 0 6px #66e5b8; }
+  #loader .ldr-particles span:nth-child(20) { left:90%; animation-delay:6.5s; animation-duration:10s; }
+
+  /* ----- main content stack ----- */
+  #loader .ldr-content{
+    position:relative; z-index:5;
+    display:flex; flex-direction:column; align-items:center;
+    gap:18px;
+    animation:ldr-content-in .9s cubic-bezier(.4,0,.2,1) both;
+  }
+  @keyframes ldr-content-in{
+    from{ opacity:0; transform:translateY(14px); }
+    to  { opacity:1; transform:translateY(0); }
+  }
+
+  /* ----- logo: bolt with concentric pulsing rings ----- */
+  #loader .ldr-logo{
+    position:relative; width:140px; height:140px;
+    display:flex; align-items:center; justify-content:center;
+    margin-bottom:6px;
+  }
+  #loader .ldr-ring{
+    position:absolute; inset:0;
+    border-radius:50%;
+    border:1.5px solid rgba(127,191,255,.50);
+    opacity:0;
+    animation:ring-pulse 3s cubic-bezier(.4,0,.2,1) infinite;
+  }
+  #loader .ldr-ring.r2{ animation-delay:1s; border-color:rgba(167,139,250,.45); }
+  #loader .ldr-ring.r3{ animation-delay:2s; border-color:rgba(102,229,184,.40); }
+  @keyframes ring-pulse{
+    0%   { transform:scale(.5); opacity:0; }
+    20%  { opacity:.9; }
+    100% { transform:scale(1.6); opacity:0; }
+  }
+  #loader .ldr-bolt{
+    position:relative; z-index:2;
+    width:130px; height:130px;
+    object-fit:contain;
+    filter:drop-shadow(0 0 18px rgba(255,184,0,.55))
+           drop-shadow(0 0 44px rgba(255,184,0,.30))
+           drop-shadow(0 4px 14px rgba(0,0,0,.45));
+    animation:bolt-bob 3.2s ease-in-out infinite;
+  }
+  @keyframes bolt-bob{
+    0%,100%{ transform:translateY(0)   rotate(-3deg) scale(1); }
+    50%    { transform:translateY(-5px) rotate(3deg)  scale(1.04); }
+  }
+
+  /* ----- horizontal scan beam (sweeps top→bottom periodically) ----- */
+  #loader .ldr-scan{
+    position:absolute; left:0; right:0; top:0;
+    height:3px; z-index:2; pointer-events:none;
+    background:linear-gradient(90deg,
+      transparent 0%,
+      rgba(127,191,255,.0) 10%,
+      rgba(127,191,255,.55) 35%,
+      rgba(167,139,250,.65) 50%,
+      rgba(102,229,184,.55) 65%,
+      rgba(127,191,255,.0) 90%,
+      transparent 100%);
+    box-shadow:0 0 18px rgba(127,191,255,.45);
+    filter:blur(.6px);
+    animation:scan-sweep 5.5s cubic-bezier(.4,0,.2,1) infinite;
+  }
+  @keyframes scan-sweep{
+    0%   { transform:translateY(-30px); opacity:0; }
+    10%  { opacity:.95; }
+    90%  { opacity:.95; }
+    100% { transform:translateY(102vh); opacity:0; }
+  }
+
+  /* ----- floating data packets drifting horizontally in the background ----- */
+  #loader .ldr-packets{ position:absolute; inset:0; z-index:1; pointer-events:none; overflow:hidden; }
+  #loader .ldr-packets .pk{
+    position:absolute;
+    height:1px;
+    background:linear-gradient(90deg,
+      transparent,
+      currentColor 20%,
+      currentColor 80%,
+      transparent);
+    box-shadow:0 0 6px currentColor;
+    opacity:0;
+    animation:packet-drift linear infinite;
+  }
+  #loader .ldr-packets .pk-1 { top:18%;  width:140px; color:#7fbfff; animation-duration:11s; animation-delay:.0s; }
+  #loader .ldr-packets .pk-2 { top:32%;  width: 90px; color:#a78bfa; animation-duration: 9s; animation-delay:2.4s; }
+  #loader .ldr-packets .pk-3 { top:46%;  width:120px; color:#66e5b8; animation-duration:13s; animation-delay:4.0s; }
+  #loader .ldr-packets .pk-4 { top:62%;  width: 70px; color:#7fbfff; animation-duration: 8s; animation-delay:1.2s; }
+  #loader .ldr-packets .pk-5 { top:74%;  width:160px; color:#a78bfa; animation-duration:12s; animation-delay:5.5s; }
+  #loader .ldr-packets .pk-6 { top:88%;  width:100px; color:#66e5b8; animation-duration:10s; animation-delay:3.0s; }
+  @keyframes packet-drift{
+    0%   { transform:translateX(-260px); opacity:0; }
+    8%   { opacity:.65; }
+    92%  { opacity:.65; }
+    100% { transform:translateX(calc(100vw + 260px)); opacity:0; }
+  }
+
+  /* ----- corner data readouts ----- */
+  #loader .ldr-readout{
+    position:absolute; z-index:4;
+    font-family:'JetBrains Mono','Consolas',monospace;
+    font-size:10px; font-weight:600; letter-spacing:.10em;
+    color:rgba(127,191,255,.62);
+    display:flex; align-items:center; gap:7px;
+    text-transform:uppercase;
+    opacity:0;
+    animation:readout-in .7s .35s cubic-bezier(.4,0,.2,1) forwards;
+  }
+  @keyframes readout-in{ to{ opacity:1; } }
+  #loader .ldr-readout.tl{ top:42px; left:42px; }
+  #loader .ldr-readout.tr{ top:42px; right:42px; }
+  #loader .ldr-readout.bl{ bottom:42px; left:42px; }
+  #loader .ldr-readout.br{ bottom:42px; right:42px; }
+  #loader .ldr-readout .dot{
+    width:6px; height:6px; border-radius:50%;
+    background:#66e5b8;
+    box-shadow:0 0 8px rgba(102,229,184,.7);
+    animation:dot-soft-pulse 1.6s ease-in-out infinite;
+  }
+  @keyframes dot-soft-pulse{
+    0%,100% { transform:scale(1);    filter:brightness(1); }
+    50%     { transform:scale(1.25); filter:brightness(1.35); }
+  }
+  #loader .ldr-readout .hex{
+    color:#a78bfa; font-weight:700; padding-left:2px;
+  }
+  #loader .ldr-readout .spinner{
+    width:10px; height:10px;
+    border:1.5px solid rgba(127,191,255,.30);
+    border-top-color:#7fbfff;
+    border-radius:50%;
+    animation:spin 1s linear infinite;
+  }
+  @keyframes spin{ to{ transform:rotate(360deg); } }
+
+  /* ----- bottom waveform / equalizer ----- */
+  #loader .ldr-waveform{
+    position:absolute; left:0; right:0; bottom:0;
+    height:60px; z-index:1;
+    display:flex; align-items:flex-end; justify-content:center;
+    gap:4px;
+    padding-bottom:14px;
+    pointer-events:none;
+    mask-image:linear-gradient(90deg, transparent, #000 15%, #000 85%, transparent);
+    -webkit-mask-image:linear-gradient(90deg, transparent, #000 15%, #000 85%, transparent);
+  }
+  #loader .ldr-waveform span{
+    width:3px; min-height:4px;
+    background:linear-gradient(180deg, #66e5b8 0%, #7fbfff 50%, #a78bfa 100%);
+    border-radius:2px;
+    box-shadow:0 0 8px rgba(127,191,255,.40);
+    animation:wave-bar 1.4s ease-in-out infinite;
+    transform-origin:bottom center;
+  }
+  @keyframes wave-bar{
+    0%,100% { height:6px;  opacity:.55; }
+    50%     { height:36px; opacity:1;   }
+  }
+  /* stagger every bar so the wave undulates */
+  #loader .ldr-waveform span:nth-child(1)  { animation-delay:.00s; animation-duration:1.2s; }
+  #loader .ldr-waveform span:nth-child(2)  { animation-delay:.06s; animation-duration:1.4s; }
+  #loader .ldr-waveform span:nth-child(3)  { animation-delay:.12s; animation-duration:1.1s; }
+  #loader .ldr-waveform span:nth-child(4)  { animation-delay:.18s; animation-duration:1.3s; }
+  #loader .ldr-waveform span:nth-child(5)  { animation-delay:.24s; animation-duration:1.5s; }
+  #loader .ldr-waveform span:nth-child(6)  { animation-delay:.30s; animation-duration:1.2s; }
+  #loader .ldr-waveform span:nth-child(7)  { animation-delay:.36s; animation-duration:1.4s; }
+  #loader .ldr-waveform span:nth-child(8)  { animation-delay:.42s; animation-duration:1.1s; }
+  #loader .ldr-waveform span:nth-child(9)  { animation-delay:.48s; animation-duration:1.3s; }
+  #loader .ldr-waveform span:nth-child(10) { animation-delay:.54s; animation-duration:1.5s; }
+  #loader .ldr-waveform span:nth-child(11) { animation-delay:.60s; animation-duration:1.2s; }
+  #loader .ldr-waveform span:nth-child(12) { animation-delay:.66s; animation-duration:1.4s; }
+  #loader .ldr-waveform span:nth-child(13) { animation-delay:.72s; animation-duration:1.1s; }
+  #loader .ldr-waveform span:nth-child(14) { animation-delay:.78s; animation-duration:1.3s; }
+  #loader .ldr-waveform span:nth-child(15) { animation-delay:.84s; animation-duration:1.5s; }
+  #loader .ldr-waveform span:nth-child(16) { animation-delay:.90s; animation-duration:1.2s; }
+  #loader .ldr-waveform span:nth-child(17) { animation-delay:.96s; animation-duration:1.4s; }
+  #loader .ldr-waveform span:nth-child(18) { animation-delay:1.02s; animation-duration:1.1s; }
+  #loader .ldr-waveform span:nth-child(19) { animation-delay:1.08s; animation-duration:1.3s; }
+  #loader .ldr-waveform span:nth-child(20) { animation-delay:1.14s; animation-duration:1.5s; }
+  #loader .ldr-waveform span:nth-child(21) { animation-delay:1.20s; animation-duration:1.2s; }
+  #loader .ldr-waveform span:nth-child(22) { animation-delay:1.26s; animation-duration:1.4s; }
+  #loader .ldr-waveform span:nth-child(23) { animation-delay:1.32s; animation-duration:1.1s; }
+  #loader .ldr-waveform span:nth-child(24) { animation-delay:1.38s; animation-duration:1.3s; }
+  #loader .ldr-waveform span:nth-child(25) { animation-delay:1.44s; animation-duration:1.5s; }
+  #loader .ldr-waveform span:nth-child(26) { animation-delay:1.50s; animation-duration:1.2s; }
+  #loader .ldr-waveform span:nth-child(27) { animation-delay:1.56s; animation-duration:1.4s; }
+  #loader .ldr-waveform span:nth-child(28) { animation-delay:1.62s; animation-duration:1.1s; }
+  #loader .ldr-waveform span:nth-child(29) { animation-delay:1.68s; animation-duration:1.3s; }
+  #loader .ldr-waveform span:nth-child(30) { animation-delay:1.74s; animation-duration:1.5s; }
+
+  /* hex address prefix on system check rows */
+  #loader .ldr-check .caddr{
+    font-family:'JetBrains Mono','Consolas',monospace;
+    font-size:10px; font-weight:600;
+    color:rgba(167,139,250,.55);
+    letter-spacing:.04em;
+  }
+  #loader .ldr-check.done .caddr{
+    color:rgba(167,139,250,.95);
+  }
+
+  /* ----- brand text ----- */
+  #loader .ldr-brand{
+    text-align:center;
+    display:flex; flex-direction:column; align-items:center;
+    gap:14px;                                    /* ← guaranteed clear space */
+    padding-top:4px;
+  }
+  #loader .ldr-name{
+    font-family:'Inter','Segoe UI',system-ui,sans-serif;
+    font-size:46px; font-weight:800; letter-spacing:-.02em;
+    line-height:1;                               /* ← no extra leading */
+    background:linear-gradient(135deg,#7fbfff 0%, #a78bfa 50%, #66e5b8 100%);
+    background-size:200% 200%;
+    -webkit-background-clip:text; background-clip:text;
+    -webkit-text-fill-color:transparent;
+    animation:gradient-shift 6s ease-in-out infinite;
+    margin:0;
+    padding-bottom:2px;                          /* ← descender breathing room */
+  }
+  @keyframes gradient-shift{
+    0%,100%{ background-position:0% 50%; }
+    50%    { background-position:100% 50%; }
+  }
+  #loader .ldr-by{
+    font-family:'Inter',sans-serif;
+    font-size:11px; font-weight:700; letter-spacing:.32em;
+    color:#7fbfff; text-transform:uppercase;
+    opacity:.85;
+    line-height:1;
+    margin:0;
+  }
+  #loader .ldr-by-rule{
+    width:60px; height:1px;
+    background:linear-gradient(90deg, transparent, #7fbfff, transparent);
+    margin:6px 0 4px;
+  }
+
+  /* ----- system checks ----- */
+  #loader .ldr-checks{
+    display:flex; flex-direction:column; gap:6px;
+    margin-top:12px; min-width:340px;
+  }
+  #loader .ldr-check{
+    display:flex; align-items:center; gap:10px;
+    font-family:'Inter','Segoe UI',sans-serif;
+    font-size:12px; font-weight:500;
+    color:rgba(230,235,246,.32);
+    padding:6px 12px;
+    background:rgba(255,255,255,.02);
+    border:1px solid rgba(255,255,255,.04);
+    border-radius:8px;
+    transition:color .35s ease, border-color .35s ease, background .35s ease;
+  }
+  #loader .ldr-check.done{
+    color:#e6ebf6;
+    background:rgba(127,191,255,.06);
+    border-color:rgba(127,191,255,.22);
+  }
+  #loader .ldr-check .cdot{
+    width:6px; height:6px; border-radius:50%;
+    background:rgba(230,235,246,.20);
+    transition:all .35s ease;
+  }
+  #loader .ldr-check.done .cdot{
+    background:#66e5b8;
+    box-shadow:0 0 10px rgba(102,229,184,.65);
+  }
+  #loader .ldr-check.done::after{
+    content:"OK"; margin-left:auto;
+    font-family:'JetBrains Mono','Inter',monospace;
+    font-size:10px; font-weight:700; letter-spacing:.10em;
+    color:#66e5b8;
+  }
+  #loader .ldr-check:not(.done)::after{
+    content:"…"; margin-left:auto;
+    font-family:'Inter',sans-serif;
+    color:rgba(230,235,246,.30);
+  }
+
+  /* ----- progress bar ----- */
+  #loader .ldr-bar-wrap{ width:min(420px,82vw); margin-top:8px; }
+  #loader .ldr-bar-label{
+    display:flex; justify-content:space-between;
+    font-family:'Inter',sans-serif;
+    font-size:11px; font-weight:600; letter-spacing:.10em;
+    color:rgba(230,235,246,.55);
+    text-transform:uppercase;
+    margin-bottom:8px;
+  }
+  #loader .ldr-bar-label #loader-pct{
+    font-family:'JetBrains Mono','Inter',monospace;
+    color:#7fbfff;
+  }
+  #loader .ldr-bar{
+    height:8px; border-radius:999px;
+    background:rgba(255,255,255,.06);
+    position:relative; overflow:hidden;
+  }
+  #loader .ldr-bar-fill{
+    height:100%;
+    background:linear-gradient(90deg,#7fbfff 0%, #a78bfa 100%);
+    width:0;
+    border-radius:999px;
+    transition:width .35s cubic-bezier(.4,0,.2,1);
+    box-shadow:0 0 16px rgba(127,191,255,.55);
+    position:relative;
+  }
+  #loader .ldr-bar-fill::after{
+    content:''; position:absolute; inset:0;
+    background:linear-gradient(90deg,
+      transparent 0%,
+      rgba(255,255,255,.45) 50%,
+      transparent 100%);
+    animation:bar-shimmer 1.6s linear infinite;
+  }
+  @keyframes bar-shimmer{
+    0%   { transform:translateX(-100%); }
+    100% { transform:translateX(100%); }
+  }
+</style>
+
+<!-- Google Fonts — terminal + industrial stencil -->
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=VT323&family=Big+Shoulders+Stencil+Display:wght@400;700;900&family=JetBrains+Mono:wght@300;400;500;700&family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+
+<!-- Tailwind / Bootstrap / animate.css -->
+<!-- v3.1.1 — Tailwind is now async. The splash hangs if Tailwind's CDN
+     is unreachable or slow because sync <script> tags block subsequent
+     scripts (including qwebchannel.js). async lets the splash boot even
+     if the CDN is down. Brief flash of unstyled main UI is acceptable
+     vs. an entire boot hang.
+
+     Shoelace removed entirely — it was bundled but never used (0 <sl-*
+     elements anywhere in the markup). One less network dependency to
+     hang on. -->
+<script src="https://cdn.tailwindcss.com" async></script>
+<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/animate.css/4.1.1/animate.min.css">
+
+<link rel="stylesheet" href="style.css">
+<script src="qwebchannel.js"></script>
+</head>
+<body data-theme="lethal" data-animations="on">
+
+<!-- =================== LOADER =================== -->
+<div id="loader">
+  <div class="ldr-mesh"></div>
+  <div class="ldr-grid"></div>
+  <div class="ldr-particles">
+    <span></span><span></span><span></span><span></span><span></span>
+    <span></span><span></span><span></span><span></span><span></span>
+    <span></span><span></span><span></span><span></span><span></span>
+    <span></span><span></span><span></span><span></span><span></span>
+  </div>
+
+  <!-- Animated horizontal scan beam that sweeps top->bottom -->
+  <div class="ldr-scan"></div>
+
+  <!-- Floating data packets drifting horizontally in the background -->
+  <div class="ldr-packets">
+    <span class="pk pk-1"></span>
+    <span class="pk pk-2"></span>
+    <span class="pk pk-3"></span>
+    <span class="pk pk-4"></span>
+    <span class="pk pk-5"></span>
+    <span class="pk pk-6"></span>
+  </div>
+
+  <div class="ldr-bracket tl"></div>
+  <div class="ldr-bracket tr"></div>
+  <div class="ldr-bracket bl"></div>
+  <div class="ldr-bracket br"></div>
+
+  <!-- Corner data readouts -->
+  <div class="ldr-readout tl"><span class="dot"></span> SYS BOOT</div>
+  <div class="ldr-readout tr">v3.1 / BUILD ⌁<span class="hex" id="loader-hex">7F92</span></div>
+  <div class="ldr-readout bl">// SECURE LINK</div>
+  <div class="ldr-readout br"><span class="spinner"></span> INIT</div>
+
+  <div class="ldr-content">
+    <div class="ldr-logo">
+      <div class="ldr-ring r1"></div>
+      <div class="ldr-ring r2"></div>
+      <div class="ldr-ring r3"></div>
+      <img class="ldr-bolt" src="throttlr-logo.png" alt="Throttlr">
+    </div>
+
+    <div class="ldr-brand">
+      <div class="ldr-name">Throttlr</div>
+      <div class="ldr-by-rule"></div>
+      <div class="ldr-by">BY  BILLY'S  MATRIX</div>
+    </div>
+
+    <div class="ldr-checks">
+      <div class="ldr-check" data-check-pct="20"><span class="cdot"></span><span class="caddr">[0x7F92]</span><span class="ctext">Kernel modules loaded</span></div>
+      <div class="ldr-check" data-check-pct="45"><span class="cdot"></span><span class="caddr">[0x8104]</span><span class="ctext">WinDivert driver mounted</span></div>
+      <div class="ldr-check" data-check-pct="70"><span class="cdot"></span><span class="caddr">[0xA210]</span><span class="ctext">Bridge channel established</span></div>
+      <div class="ldr-check" data-check-pct="92"><span class="cdot"></span><span class="caddr">[0xC400]</span><span class="ctext">Interface ready</span></div>
+    </div>
+
+    <div class="ldr-bar-wrap">
+      <div class="ldr-bar-label">
+        <span id="loader-stage">Initializing…</span>
+        <span id="loader-pct">0%</span>
+      </div>
+      <div class="ldr-bar">
+        <div class="ldr-bar-fill" id="loader-fill"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Bottom waveform/equalizer bars -->
+  <div class="ldr-waveform">
+    <span></span><span></span><span></span><span></span><span></span>
+    <span></span><span></span><span></span><span></span><span></span>
+    <span></span><span></span><span></span><span></span><span></span>
+    <span></span><span></span><span></span><span></span><span></span>
+    <span></span><span></span><span></span><span></span><span></span>
+    <span></span><span></span><span></span><span></span><span></span>
+  </div>
+</div>
+
+<!-- =================== CRT / NOISE OVERLAYS =================== -->
+<div class="crt-scanlines"></div>
+<div class="crt-vignette"></div>
+<div class="crt-noise"></div>
+
+<!-- =================== TITLE BAR =================== -->
+<div class="titlebar" id="titlebar">
+  <div class="titlebar-drag" id="titlebar-drag">
+    <div class="titlebar-brand">
+      <img class="tb-logo" src="throttlr-logo.png" alt="">
+      <span class="tb-title">Throttlr</span>
+      <span class="tb-sep">—</span>
+      <span class="tb-sub">by Billy's Matrix</span>
+    </div>
+    <div class="titlebar-status" id="titlebar-status">
+      <span class="tb-status-dot" id="tb-status-dot"></span>
+      <span id="tb-status-text">Idle</span>
+    </div>
+  </div>
+  <div class="titlebar-controls">
+    <button class="tbtn" id="tbtn-min" title="Minimize">─</button>
+    <button class="tbtn" id="tbtn-max" title="Maximize">▢</button>
+    <button class="tbtn close" id="tbtn-close" title="Close">×</button>
+  </div>
+</div>
+
+<div class="hazard-tape"></div>
+
+<!-- Resize edges (invisible hit-zones) -->
+<div class="resize-edge re-top"    data-edges="top"></div>
+<div class="resize-edge re-bottom" data-edges="bottom"></div>
+<div class="resize-edge re-left"   data-edges="left"></div>
+<div class="resize-edge re-right"  data-edges="right"></div>
+<div class="resize-edge re-tl"     data-edges="top,left"></div>
+<div class="resize-edge re-tr"     data-edges="top,right"></div>
+<div class="resize-edge re-bl"     data-edges="bottom,left"></div>
+<div class="resize-edge re-br"     data-edges="bottom,right"></div>
+
+<!-- =================== APP =================== -->
+<div class="app-scroll">
+<main class="app">
+
+  <!-- ===== HEADER ===== -->
+  <section class="panel header-panel">
+    <div class="panel-corners"></div>
+    <div class="panel-corners-2"></div>
+    <div class="header-row">
+      <div class="header-left">
+        <div class="page-tag">// NETWORK THROTTLER</div>
+        <h1 class="page-title">Throttlr</h1>
+        <div class="page-sub">Per-application network throttler — drop, lag, throttle, freeze and block traffic for any process.</div>
+      </div>
+      <div class="header-right">
+        <button class="btn-stencil" id="profiles-btn"><span>▼</span> Profiles</button>
+        <button class="btn-stencil" id="open-customize-btn" hidden title="Open the theme customizer for the active custom theme"><span>🎨</span> Customize Theme</button>
+        <button class="btn-stencil primary" id="settings-btn"><span>⚙</span> Settings</button>
+        <!-- v3.1.3 — Header feedback button. Opens the feedback form on
+             throttlr.netlify.app/feedback.html via the same allowlisted
+             openExternalUrl bridge slot the donate button uses. Placed
+             immediately before the donate button so they read as a pair
+             (left to right: ask for feedback, then ask for support). -->
+        <button class="btn-stencil btn-feedback-header" id="header-feedback-btn" type="button" title="Send feedback or report a bug">
+          <svg class="btn-feedback-icon" viewBox="0 0 24 24" aria-hidden="true">
+            <path fill="currentColor" d="M20 2H4c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h4l4 4 4-4h4c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2zM7 9h10v2H7V9zm6 5H7v-2h6v2zm4-6H7V6h10v2z"/>
+          </svg>
+          Feedback
+        </button>
+        <!-- v3.1.1 — Header donate button. Opens Billy's Ko-fi page via the
+             allowlisted openExternalUrl bridge slot. Styled subtly so it
+             doesn't shout at users every session — donation asks belong
+             quiet, not loud. -->
+        <button class="btn-stencil btn-donate-header" id="header-donate-btn" type="button" title="Support Throttlr development">
+          <span class="btn-donate-icon-mask" aria-hidden="true"></span> Buy me a coffee
+        </button>
+        <div class="admin-badge" id="admin-badge">
+          <span class="ab-dot"></span>
+          <span id="admin-text">Admin</span>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===== APPLICATION ===== -->
+  <section class="panel target-panel">
+    <div class="panel-corners"></div>
+    <div class="panel-corners-2"></div>
+    <div class="panel-head">
+      <span class="panel-num">01</span>
+      <span class="panel-title">Application</span>
+      <span class="panel-status" id="target-status"></span>
+      <div class="panel-tools">
+        <button type="button" class="multi-target-btn" id="multi-target-btn"
+                title="Toggle multi-target mode — apply functions to multiple apps at once">
+          <span class="mtb-icon">⊕</span>
+          <span class="mtb-label">Multi-target</span>
+        </button>
+      </div>
+    </div>
+    <div class="app-chooser-row">
+      <button type="button" class="app-chooser-btn" id="app-chooser-btn">
+        <span class="acb-icon">▼</span>
+        <span class="acb-text">
+          <span class="acb-label" id="acb-label">No app selected</span>
+          <span class="acb-value" id="acb-value">Click here to choose application — or drag &amp; drop an .exe</span>
+        </span>
+        <span class="acb-arrow">›</span>
+      </button>
+    </div>
+    <div class="recent-apps-bar" id="recent-apps-bar" hidden>
+      <span class="rab-label">Recent</span>
+      <div class="rab-chips" id="rab-chips"></div>
+    </div>
+    <div class="multi-target-list" id="multi-target-list" hidden>
+      <span class="mtl-label">Targets</span>
+      <div class="mtl-chips" id="mtl-chips"></div>
+      <button type="button" class="mtl-add-btn" id="mtl-add-btn">+ Add app</button>
+    </div>
+
+    <!-- v3.0.7 — Connected Processes inline panel.
+         A toggle gates the feature: when OFF (default), Throttlr targets
+         every related process automatically (legacy behavior) — the picker
+         body is hidden. When ON, the body becomes interactive and the user
+         can tick/untick individual PIDs for fine-grained control.
+         Particularly useful for diagnosing "DROP isn't going up" on Chrome
+         — the actual network IO happens in a separate subprocess and the
+         user may want to confirm it's included or even isolate to just it. -->
+    <div class="connected-procs" id="connected-procs" hidden>
+      <div class="cp-head">
+        <label class="cp-enable-toggle" title="When OFF, Throttlr targets every related process automatically. When ON, you can tick/untick specific subprocesses below.">
+          <input type="checkbox" id="cp-enable-checkbox">
+          <span class="cp-switch"></span>
+        </label>
+        <span class="cp-title">Connected Processes</span>
+        <span class="cp-summary" id="cp-summary"></span>
+        <span class="cp-expand-icon" id="cp-toggle-icon" hidden>▶</span>
+      </div>
+      <div class="cp-body" id="cp-body" hidden>
+        <div class="cp-toolbar">
+          <button type="button" class="btn-stencil cp-btn-sm" id="cp-tick-all">✓ Tick all</button>
+          <button type="button" class="btn-stencil cp-btn-sm" id="cp-untick-all">✗ Untick all</button>
+          <span class="cp-live-dot"></span><span class="cp-live-text">Updates every 2s while open</span>
+        </div>
+        <div class="cp-list" id="cp-list">
+          <div class="cp-loading">Loading processes…</div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===== QUICK PRESETS ===== -->
+  <section class="presets-section">
+    <div class="panel-head freestanding">
+      <span class="panel-num">⚡</span>
+      <span class="panel-title">Quick Presets</span>
+      <span class="panel-status">One-tap configurations</span>
+      <div class="panel-tools">
+        <button type="button" class="preset-tab active" data-preset-tab="vibes">Chaos</button>
+        <button type="button" class="preset-tab" data-preset-tab="realworld">Real-world</button>
+        <button type="button" class="preset-tab" data-preset-tab="scenarios">Scenarios</button>
+        <button type="button" class="preset-tab" data-preset-tab="custom">My presets</button>
+      </div>
+    </div>
+    <div class="presets-grid" id="preset-grid-vibes">
+      <button type="button" class="preset-card" data-preset-id="slow">
+        <span class="pc-icon icon" data-icon="snail"></span>
+        <span class="pc-name">Slow Connection</span>
+        <span class="pc-desc">250ms lag · 50 KB/s</span>
+      </button>
+      <button type="button" class="preset-card" data-preset-id="gamekiller">
+        <span class="pc-icon icon" data-icon="skull"></span>
+        <span class="pc-name">Connection Killer</span>
+        <span class="pc-desc">30% drop · 800ms lag</span>
+      </button>
+      <button type="button" class="preset-card" data-preset-id="freezeburst">
+        <span class="pc-icon icon" data-icon="snowflake"></span>
+        <span class="pc-name">Freeze Burst</span>
+        <span class="pc-desc">Hold &amp; release fast</span>
+      </button>
+      <button type="button" class="preset-card" data-preset-id="spike">
+        <span class="pc-icon icon" data-icon="zap"></span>
+        <span class="pc-name">Spike</span>
+        <span class="pc-desc">Block all traffic</span>
+      </button>
+      <button type="button" class="preset-card" data-preset-id="dnsblock">
+        <span class="pc-icon icon" data-icon="ban"></span>
+        <span class="pc-name">DNS Block</span>
+        <span class="pc-desc">Drop DNS only</span>
+      </button>
+    </div>
+    <div class="presets-grid" id="preset-grid-realworld" hidden>
+      <button type="button" class="preset-card" data-preset-id="56k">
+        <span class="pc-icon icon" data-icon="phone"></span>
+        <span class="pc-name">56k Modem</span>
+        <span class="pc-desc">7 KB/s · 200±50ms</span>
+      </button>
+      <button type="button" class="preset-card" data-preset-id="3gslow">
+        <span class="pc-icon icon" data-icon="signalLow"></span>
+        <span class="pc-name">3G Slow</span>
+        <span class="pc-desc">50 KB/s · 400±100ms</span>
+      </button>
+      <button type="button" class="preset-card" data-preset-id="3gfast">
+        <span class="pc-icon icon" data-icon="signalMid"></span>
+        <span class="pc-name">3G Fast</span>
+        <span class="pc-desc">200 KB/s · 150±50ms</span>
+      </button>
+      <button type="button" class="preset-card" data-preset-id="4glte">
+        <span class="pc-icon icon" data-icon="signalHigh"></span>
+        <span class="pc-name">4G LTE</span>
+        <span class="pc-desc">1.5 MB/s · 50±20ms</span>
+      </button>
+      <button type="button" class="preset-card" data-preset-id="cable">
+        <span class="pc-icon icon" data-icon="globe"></span>
+        <span class="pc-name">Cable</span>
+        <span class="pc-desc">5 MB/s · 20ms</span>
+      </button>
+      <button type="button" class="preset-card" data-preset-id="fiber">
+        <span class="pc-icon icon" data-icon="zap"></span>
+        <span class="pc-name">Fiber</span>
+        <span class="pc-desc">25 MB/s · 5ms</span>
+      </button>
+      <button type="button" class="preset-card" data-preset-id="satellite">
+        <span class="pc-icon icon" data-icon="satellite"></span>
+        <span class="pc-name">Satellite</span>
+        <span class="pc-desc">1 MB/s · 600±100ms</span>
+      </button>
+    </div>
+    <div class="presets-grid scenarios-grid" id="preset-grid-scenarios" hidden></div>
+    <div class="presets-grid" id="preset-grid-custom" hidden>
+      <div class="preset-empty" id="preset-custom-empty">
+        No saved presets yet — tweak settings then click <b>Save current</b> to make one.
+      </div>
+    </div>
+    <div class="preset-actions">
+      <button type="button" class="preset-action-btn" id="preset-save-btn">
+        <span class="save-icon-mask" aria-hidden="true"></span> Save current as preset
+      </button>
+      <button type="button" class="preset-action-btn ghost" id="preset-clear-btn">
+        Clear all functions
+      </button>
+      <button type="button" class="preset-action-btn ghost" id="preset-export-btn">
+        Export presets
+      </button>
+      <button type="button" class="preset-action-btn ghost" id="preset-import-btn">
+        Import presets
+      </button>
+    </div>
+  </section>
+
+  <!-- ===== FUNCTIONS ===== -->
+  <section class="functions-section">
+    <div class="panel-head freestanding">
+      <span class="panel-num">02</span>
+      <span class="panel-title">Functions</span>
+      <span class="panel-status">Toggle and adjust per-direction</span>
+    </div>
+    <div id="mt-tabs" class="mt-tabs" hidden></div>
+    <div class="functions">
+
+      <!-- LAG -->
+      <div class="func-mod" data-func="lag">
+        <div class="fm-row">
+          <label class="lethal-toggle">
+            <input type="checkbox" class="toggle-input" data-key="lag_on">
+            <span class="lt-track"><span class="lt-knob"></span></span>
+          </label>
+          <div class="fm-name">Lag</div>
+          <div class="dir-checks">
+            <label class="dir-check"><input type="checkbox" data-key="lag_in" checked><span></span><b>In</b></label>
+            <label class="dir-check"><input type="checkbox" data-key="lag_out" checked><span></span><b>Out</b></label>
+          </div>
+          <div class="fm-spacer"></div>
+          <div class="fm-param">
+            <label>Delay</label>
+            <input type="number" data-key="lag_ms" value="500" min="0" max="20000" class="param-input">
+            <span class="unit">ms</span>
+          </div>
+          <div class="fm-param">
+            <label>Jitter</label>
+            <input type="number" data-key="lag_jitter_ms" value="0" min="0" max="2000" class="param-input">
+            <span class="unit">ms</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- DROP -->
+      <div class="func-mod" data-func="drop">
+        <div class="fm-row">
+          <label class="lethal-toggle">
+            <input type="checkbox" class="toggle-input" data-key="drop_on">
+            <span class="lt-track"><span class="lt-knob"></span></span>
+          </label>
+          <div class="fm-name">Drop</div>
+          <div class="dir-checks">
+            <label class="dir-check"><input type="checkbox" data-key="drop_in" checked><span></span><b>In</b></label>
+            <label class="dir-check"><input type="checkbox" data-key="drop_out" checked><span></span><b>Out</b></label>
+          </div>
+          <div class="fm-spacer"></div>
+          <div class="fm-param">
+            <label>Chance</label>
+            <input type="number" data-key="drop_chance" value="60" min="0" max="100" class="param-input">
+            <span class="unit">%</span>
+          </div>
+          <label class="dir-check dns-only" title="When checked, only DNS (port 53) packets are dropped — leaves the rest intact">
+            <input type="checkbox" data-key="drop_dns_only">
+            <span></span><b>DNS only</b>
+          </label>
+        </div>
+      </div>
+
+      <!-- THROTTLE -->
+      <div class="func-mod" data-func="throttle">
+        <div class="fm-row">
+          <label class="lethal-toggle">
+            <input type="checkbox" class="toggle-input" data-key="throttle_on">
+            <span class="lt-track"><span class="lt-knob"></span></span>
+          </label>
+          <div class="fm-name">Throttle</div>
+          <div class="dir-checks">
+            <label class="dir-check"><input type="checkbox" data-key="throttle_in" checked><span></span><b>In</b></label>
+            <label class="dir-check"><input type="checkbox" data-key="throttle_out" checked><span></span><b>Out</b></label>
+          </div>
+          <div class="fm-spacer"></div>
+          <div class="fm-param">
+            <label>Limit</label>
+            <input type="number" data-key="throttle_kbps" value="100" min="1" max="100000" class="param-input">
+            <span class="unit">KB/s</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- FREEZE -->
+      <div class="func-mod freeze" data-func="freeze">
+        <div class="fm-row">
+          <label class="lethal-toggle">
+            <input type="checkbox" class="toggle-input" data-key="freeze_on">
+            <span class="lt-track"><span class="lt-knob"></span></span>
+          </label>
+          <div class="fm-name">Freeze <span class="fm-key" id="fm-key-freeze">F8</span></div>
+          <div class="dir-checks">
+            <label class="dir-check"><input type="checkbox" data-key="freeze_in" checked><span></span><b>In</b></label>
+            <label class="dir-check"><input type="checkbox" data-key="freeze_out" checked><span></span><b>Out</b></label>
+          </div>
+          <div class="fm-spacer"></div>
+          <div class="fm-param">
+            <label>Speed</label>
+            <select class="param-input param-select" data-key="freeze_replay_ms">
+              <option value="0">Burst (instant)</option>
+              <option value="1">Very fast — 1 ms/pkt</option>
+              <option value="5">Fast — 5 ms/pkt</option>
+              <option value="25">Medium — 25 ms/pkt</option>
+              <option value="100">Slow — 100 ms/pkt</option>
+              <option value="500">Very slow — 500 ms/pkt</option>
+              <option value="2000">Crawl — 2 s/pkt</option>
+            </select>
+          </div>
+          <button class="btn-clear" id="freeze-clear">Clear queue</button>
+        </div>
+        <div class="fm-replay" id="freeze-replay-sub" hidden>▶ Replaying — 0 packets remaining</div>
+      </div>
+
+      <!-- BLOCK -->
+      <div class="func-mod block" data-func="block">
+        <div class="fm-row">
+          <label class="lethal-toggle">
+            <input type="checkbox" class="toggle-input" data-key="block_on">
+            <span class="lt-track"><span class="lt-knob"></span></span>
+          </label>
+          <div class="fm-name">Block <span class="fm-key" id="fm-key-block">F9</span></div>
+          <div class="dir-checks">
+            <label class="dir-check"><input type="checkbox" data-key="block_in" checked><span></span><b>In</b></label>
+            <label class="dir-check"><input type="checkbox" data-key="block_out" checked><span></span><b>Out</b></label>
+          </div>
+          <div class="fm-spacer"></div>
+          <span class="fm-hint">Drops 100% of matching packets</span>
+        </div>
+      </div>
+
+      <!-- FUN -->
+      <div class="func-mod fun" data-func="fun">
+        <div class="fm-row">
+          <label class="lethal-toggle">
+            <input type="checkbox" class="toggle-input" data-key="fun_on">
+            <span class="lt-track"><span class="lt-knob"></span></span>
+          </label>
+          <div class="fm-name">Fun <span class="fm-key" id="fm-key-fun">F10</span></div>
+          <div class="fm-spacer"></div>
+          <div class="fm-param">
+            <label>Intensity</label>
+            <input type="range" data-key="fun_intensity" value="50" min="0" max="100" class="slider-input">
+            <span class="unit" id="fun-intensity-display">50%</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- DOMAIN BLOCK (Phase 2) -->
+      <div class="func-mod" data-func="domainblock">
+        <div class="fm-row">
+          <label class="lethal-toggle">
+            <input type="checkbox" class="toggle-input" id="domain-block-toggle">
+            <span class="lt-track"><span class="lt-knob"></span></span>
+          </label>
+          <div class="fm-name">Block domains</div>
+          <div class="fm-spacer"></div>
+          <button type="button" class="fm-btn" id="domain-block-config-btn">Configure…</button>
+        </div>
+        <div class="fm-sub" id="domain-block-summary">No lists active</div>
+      </div>
+
+      <!-- GEO BLOCK (Phase 2) -->
+      <div class="func-mod" data-func="geoblock">
+        <div class="fm-row">
+          <label class="lethal-toggle">
+            <input type="checkbox" class="toggle-input" id="geo-block-toggle">
+            <span class="lt-track"><span class="lt-knob"></span></span>
+          </label>
+          <div class="fm-name">Block countries</div>
+          <div class="fm-spacer"></div>
+          <button type="button" class="fm-btn" id="geo-block-config-btn">Pick countries…</button>
+        </div>
+        <div class="fm-sub" id="geo-block-summary">No countries selected</div>
+      </div>
+
+    </div>
+  </section>
+
+  <!-- ===== TRAFFIC ===== -->
+  <section class="panel telemetry-panel">
+    <div class="panel-corners"></div>
+    <div class="panel-corners-2"></div>
+    <div class="panel-head">
+      <span class="panel-num">03</span>
+      <span class="panel-title">Live traffic</span>
+      <span class="panel-status" id="rate-display">0.0 KB/s</span>
+    </div>
+
+    <div class="bw-readouts">
+      <div class="bw-readout bw-readout-in">
+        <span class="bw-readout-dot"></span>
+        <span class="bw-readout-label">Inbound</span>
+        <span class="bw-readout-val" id="bw-readout-in-cur">0 KB/s</span>
+        <span class="bw-readout-meta">peak <strong id="bw-readout-in-peak">0 KB/s</strong> · avg <strong id="bw-readout-in-avg">0 KB/s</strong></span>
+      </div>
+      <div class="bw-readout bw-readout-out">
+        <span class="bw-readout-dot"></span>
+        <span class="bw-readout-label">Outbound</span>
+        <span class="bw-readout-val" id="bw-readout-out-cur">0 KB/s</span>
+        <span class="bw-readout-meta">peak <strong id="bw-readout-out-peak">0 KB/s</strong> · avg <strong id="bw-readout-out-avg">0 KB/s</strong></span>
+      </div>
+      <button class="bw-reset-btn" id="bw-reset-btn" type="button" title="Reset peak / average">↻</button>
+    </div>
+
+    <div class="bw-graph-wrap">
+      <span class="bw-axis-label-y" id="bw-axis-max">—</span>
+      <canvas id="traffic-canvas" width="1000" height="120"></canvas>
+      <span class="bw-axis-label-x">last 60 seconds</span>
+    </div>
+
+    <div class="stat-grid">
+      <div class="stat-cell">
+        <div class="stat-lab">Packets</div>
+        <div class="stat-val" id="stat-seen">0</div>
+        <div class="stat-bar"><span></span></div>
+      </div>
+      <div class="stat-cell danger">
+        <div class="stat-lab">Dropped</div>
+        <div class="stat-val" id="stat-dropped">0</div>
+        <div class="stat-bar"><span></span></div>
+      </div>
+      <div class="stat-cell warn">
+        <div class="stat-lab">Delayed</div>
+        <div class="stat-val" id="stat-delayed">0</div>
+        <div class="stat-bar"><span></span></div>
+      </div>
+      <div class="stat-cell ice">
+        <div class="stat-lab">Held</div>
+        <div class="stat-val" id="stat-held">0</div>
+        <div class="stat-bar"><span></span></div>
+      </div>
+      <div class="stat-cell">
+        <div class="stat-lab">Volume</div>
+        <div class="stat-val"><span id="stat-bytes">0</span><span class="stat-unit"> KB</span></div>
+        <div class="stat-bar"><span></span></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===== HOTKEY HINT ===== -->
+  <div class="hotkey-hint">
+    <span><kbd id="hk-hint-startstop">F5</kbd> Start / Stop</span>
+    <span><kbd id="hk-hint-freeze">F8</kbd> Freeze</span>
+    <span><kbd id="hk-hint-block">F9</kbd> Block</span>
+    <span><kbd id="hk-hint-fun">F10</kbd> Fun</span>
+    <span class="hint-note">// Hotkeys work globally, including in fullscreen apps</span>
+  </div>
+
+  <div style="height:140px"></div>
+
+</main>
+</div>
+
+<!-- =================== STICKY BOTTOM BAR =================== -->
+<div class="action-bar" id="action-bar">
+  <div class="action-bar-stripe"></div>
+  <div class="action-bar-inner">
+    <div class="ab-status">
+      <span class="ab-dot" id="ab-status-dot"></span>
+      <div class="ab-status-text">
+        <div class="ab-line" id="ab-status-line">Stopped</div>
+        <div class="ab-sub" id="ab-status-sub">Pick an app and enable a function</div>
+      </div>
+      <!-- v3.1.2 — Seven-segment stopwatch. Hidden until capture starts.
+           The .ab-sw-ghost layer shows dim "unlit" segments behind the
+           live time for an authentic digital-clock look. State classes:
+           .running (green) / .stopped (frozen red). -->
+      <div class="ab-stopwatch" id="ab-stopwatch" hidden>
+        <span class="ab-sw-ghost" id="ab-sw-ghost">88:88</span>
+        <span class="ab-sw-time" id="ab-sw-time">00:00</span>
+      </div>
+      <div class="ab-replay-badge" id="replay-badge" hidden>
+        <span class="ab-replay-icon">▶</span>
+        <div class="ab-replay-text">
+          <div class="ab-replay-title">REPLAYING</div>
+          <div class="ab-replay-count"><span id="replay-count">0</span> packets left</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="ab-mini-stats">
+      <div class="ab-mini">
+        <div class="ab-mini-l">Sent</div>
+        <div class="ab-mini-v" id="mini-sent">0</div>
+        <div class="ab-mini-rate" id="mini-sent-rate"></div>
+      </div>
+      <div class="ab-mini">
+        <div class="ab-mini-l">Recv</div>
+        <div class="ab-mini-v" id="mini-received">0</div>
+        <div class="ab-mini-rate" id="mini-received-rate"></div>
+      </div>
+      <div class="ab-mini">
+        <div class="ab-mini-l">
+          Drop
+          <span class="ab-mini-pct" id="mini-drop-pct" hidden></span>
+        </div>
+        <div class="ab-mini-v danger" id="mini-dropped">0</div>
+        <div class="ab-mini-rate" id="mini-dropped-rate"></div>
+      </div>
+      <div class="ab-mini">
+        <div class="ab-mini-l">Delay</div>
+        <div class="ab-mini-v warn" id="mini-delayed">0</div>
+        <div class="ab-mini-rate" id="mini-delayed-rate"></div>
+      </div>
+      <div class="ab-mini">
+        <div class="ab-mini-l">Held</div>
+        <div class="ab-mini-v ice" id="mini-held">0</div>
+        <div class="ab-mini-rate" id="mini-held-rate"></div>
+      </div>
+    </div>
+
+    <span class="start-msg" id="start-msg" hidden></span>
+    <button type="button" class="start-btn-bar" id="start-btn">
+      <span class="sb-arrow">▶</span>
+      <span class="sb-text">Start</span>
+      <span class="sb-key" id="sb-key-display">F5</span>
+    </button>
+  </div>
+</div>
+
+<!-- ================= SIDE TOOL RAIL ================= -->
+<!-- Floating right-side rail for advanced tools. Doesn't crowd the
+     action bar — Inspector / Practice Ping / Record / View Recordings
+     / Topology / PCAP / Script all live here in roomier buttons. -->
+<aside class="tool-rail" id="tool-rail">
+  <div class="tool-rail-head">
+    <span class="trh-bar"></span>
+    <span class="trh-label">TOOLS</span>
+    <span class="trh-bar"></span>
+  </div>
+  <button type="button" class="tool-rail-btn" id="open-inspector-btn" title="Show live connections">
+    <span class="trb-icon icon" data-icon="search"></span>
+    <span class="trb-label">Inspector</span>
+  </button>
+  <button type="button" class="tool-rail-btn" id="open-pingmode-btn" title="Practice ping mode">
+    <span class="trb-icon icon" data-icon="activity"></span>
+    <span class="trb-label">Practice Ping</span>
+  </button>
+  <button type="button" class="tool-rail-btn rec-btn" id="record-btn" title="Record this session">
+    <span class="trb-icon icon rec-dot" data-icon="record"></span>
+    <span class="trb-label">Record</span>
+  </button>
+  <button type="button" class="tool-rail-btn" id="open-replay-btn" title="View recordings">
+    <span class="trb-icon icon" data-icon="film"></span>
+    <span class="trb-label">Recordings</span>
+  </button>
+  <div class="tool-rail-divider"></div>
+  <button type="button" class="tool-rail-btn" id="open-topology-btn" title="Live network topology">
+    <span class="trb-icon icon" data-icon="network"></span>
+    <span class="trb-label">Topology</span>
+  </button>
+  <button type="button" class="tool-rail-btn" id="open-pcap-btn" title="PCAP recording for Wireshark">
+    <span class="trb-icon icon" data-icon="package"></span>
+    <span class="trb-label">PCAP</span>
+  </button>
+  <button type="button" class="tool-rail-btn" id="open-pktdump-btn" title="Live packet dump (tcpdump-style tail)">
+    <span class="trb-icon icon" data-icon="activity"></span>
+    <span class="trb-label">Live Dump</span>
+  </button>
+  <button type="button" class="tool-rail-btn" id="open-speedtest-btn" title="Test my internet speed (download + upload + latency)">
+    <span class="trb-icon icon" data-icon="zap"></span>
+    <span class="trb-label">Test Speed</span>
+  </button>
+  <button type="button" class="tool-rail-btn" id="open-script-btn" title="Custom filter scripting">
+    <span class="trb-icon icon" data-icon="zap"></span>
+    <span class="trb-label">Script</span>
+  </button>
+</aside>
+
+<!-- =================== MODALS =================== -->
+<div class="modal-overlay" id="settings-modal" hidden>
+  <div class="modal modal-anim">
+    <div class="modal-corners"></div>
+    <div class="modal-head">
+      <span class="m-num">⚙</span>
+      <h2>Settings</h2>
+      <!-- v3.1.0 — Search across all settings tabs -->
+      <div class="settings-search-wrap">
+        <span class="settings-search-icon" data-icon="search"></span>
+        <input type="text" id="settings-search" class="settings-search-input"
+               placeholder="Search settings…" autocomplete="off" spellcheck="false">
+        <button type="button" id="settings-search-clear" class="settings-search-clear" hidden title="Clear (Esc)">×</button>
+      </div>
+      <button class="modal-head-cta" id="customize-tab-btn" data-tab="customize" hidden title="Customize the active custom theme's colors"><span>🎨</span> <span class="mhc-label">Customize Theme</span></button>
+      <button class="modal-close" data-close-modal="settings-modal">×</button>
+    </div>
+    <div class="modal-tabs">
+      <button class="tab-btn active" data-tab="appearance">Appearance</button>
+      <button class="tab-btn" data-tab="hotkeys">Hotkeys</button>
+      <button class="tab-btn" data-tab="overlay">Overlay</button>
+      <button class="tab-btn" data-tab="sound">Sound</button>
+      <button class="tab-btn" data-tab="behavior">Behavior</button>
+      <button class="tab-btn" data-tab="profile">Profile</button>
+      <button class="tab-btn" data-tab="automation">Automation</button>
+      <button class="tab-btn" data-tab="network">Network</button>
+      <button class="tab-btn" data-tab="advanced">Advanced</button>
+      <button class="tab-btn" data-tab="info">
+        <span>Info</span>
+        <span class="tab-badge" id="info-tab-badge" hidden>!</span>
+      </button>
+      <button class="tab-btn" data-tab="how-to-use">How to Use</button>
+    </div>
+    <div class="modal-body">
+      <div class="tab-pane active" data-pane="appearance">
+        <label class="field-label">Design</label>
+        <div class="design-grid">
+          <button type="button" class="design-tile" data-design="industrial">
+            <div class="design-preview design-preview-industrial"></div>
+            <div class="design-label">
+              <span class="design-name">Industrial</span>
+              <span class="design-sub">Hazard tape, stencil, CRT</span>
+            </div>
+          </button>
+          <button type="button" class="design-tile" data-design="midnight">
+            <div class="design-preview design-preview-midnight"></div>
+            <div class="design-label">
+              <span class="design-name">Midnight</span>
+              <span class="design-sub">Smooth, soft glow, rounded</span>
+            </div>
+          </button>
+          <button type="button" class="design-tile" data-design="windows7">
+            <div class="design-preview design-preview-windows7"></div>
+            <div class="design-label">
+              <span class="design-name">Windows 7</span>
+              <span class="design-sub">Aero glass, cornflower blue</span>
+            </div>
+          </button>
+          <button type="button" class="design-tile" data-design="optimised">
+            <div class="design-preview design-preview-optimised"></div>
+            <div class="design-label">
+              <span class="design-name">Optimised</span>
+              <span class="design-sub">Flat, fast, no animations</span>
+            </div>
+          </button>
+        </div>
+
+        <!-- v3.0.5 — Custom Themes section. Tiles render below the built-ins,
+             populated from %USERPROFILE%/.throttlr/themes/*.json -->
+        <div class="custom-themes-section">
+          <div class="custom-themes-head">
+            <label class="field-label">Custom themes</label>
+            <div class="custom-themes-actions">
+              <button type="button" class="btn-hazard themes-cta" id="open-themes-gallery-btn" title="Browse community themes (opens in your browser)">
+                <span class="cta-icon">↗</span>
+                <span class="cta-label">
+                  <span class="cta-title">More themes</span>
+                  <span class="cta-sub">throttlr-themes.netlify.app</span>
+                </span>
+                <svg class="cta-external" width="14" height="14" viewBox="0 0 14 14" aria-hidden="true">
+                  <path d="M3 3h5v1.5H4.5v5.5H10V6.5h1.5V11a.5.5 0 0 1-.5.5H4a1 1 0 0 1-1-1V3z" fill="currentColor"/>
+                  <path d="M9 2h3v3h-1.5V3.56l-4.22 4.22-1.06-1.06L9.44 2.5H9V2z" fill="currentColor"/>
+                </svg>
+              </button>
+              <button type="button" class="btn-stencil themes-secondary" id="open-themes-folder-btn" title="Open the folder where custom themes live">
+                <span>📁</span> Open themes folder
+              </button>
+              <button type="button" class="btn-stencil themes-secondary" id="rescan-themes-btn" title="Re-scan the themes folder for newly added themes">
+                <span>↻</span> Rescan
+              </button>
+            </div>
+          </div>
+          <div class="design-grid" id="custom-themes-grid">
+            <div class="custom-themes-empty" id="custom-themes-empty">
+              <p>No custom themes installed yet.</p>
+              <p class="hint-text">
+                Click <strong>More themes</strong> to browse the gallery, download a theme, then drop the <code>.json</code> + <code>.css</code> files into your themes folder and click Rescan.
+              </p>
+            </div>
+          </div>
+        </div>
+
+        <div class="industrial-only">
+          <label class="field-label" style="margin-top:20px">Color scheme</label>
+          <div class="theme-grid">
+            <button class="theme-tile" data-theme="lethal"><div class="theme-preview lethal"></div><span>Hazard</span></button>
+            <button class="theme-tile" data-theme="eclipse"><div class="theme-preview eclipse"></div><span>Eclipse</span></button>
+            <button class="theme-tile" data-theme="blood"><div class="theme-preview blood"></div><span>Blood</span></button>
+            <button class="theme-tile" data-theme="frost"><div class="theme-preview frost"></div><span>Frost</span></button>
+            <button class="theme-tile" data-theme="toxic"><div class="theme-preview toxic"></div><span>Toxic</span></button>
+          </div>
+        </div>
+
+        <div class="midnight-only">
+          <label class="field-label" style="margin-top:20px">Accent</label>
+          <div class="midnight-grid">
+            <button type="button" class="midnight-tile" data-midnight-accent="aurora">
+              <div class="midnight-preview aurora"></div><span>Aurora</span>
+            </button>
+            <button type="button" class="midnight-tile" data-midnight-accent="sunset">
+              <div class="midnight-preview sunset"></div><span>Sunset</span>
+            </button>
+            <button type="button" class="midnight-tile" data-midnight-accent="forest">
+              <div class="midnight-preview forest"></div><span>Forest</span>
+            </button>
+            <button type="button" class="midnight-tile" data-midnight-accent="amber">
+              <div class="midnight-preview amber"></div><span>Amber</span>
+            </button>
+            <button type="button" class="midnight-tile" data-midnight-accent="rose">
+              <div class="midnight-preview rose"></div><span>Rose</span>
+            </button>
+            <button type="button" class="midnight-tile" data-midnight-accent="ocean">
+              <div class="midnight-preview ocean"></div><span>Ocean</span>
+            </button>
+          </div>
+          <div class="custom-accent-row">
+            <label class="field-label" style="margin-top:14px">Custom accent</label>
+            <div class="custom-accent-controls">
+              <input type="color" id="midnight-custom-color" class="color-picker" value="#7fbfff">
+              <input type="text" id="midnight-custom-hex" class="param-input" placeholder="#7fbfff" maxlength="7">
+              <button type="button" class="settings-btn" id="midnight-custom-apply">Apply</button>
+              <button type="button" class="settings-btn ghost" id="midnight-custom-clear">Reset</button>
+            </div>
+            <p class="hint-text">Override the Midnight accent with any colour. Empty/Reset = use the selected preset above.</p>
+          </div>
+        </div>
+
+        <label class="check-row" style="margin-top:18px">
+          <input type="checkbox" id="compact-mode">
+          <span>Compact mode <em>— smaller spacing, denser layout</em></span>
+        </label>
+        <label class="check-row">
+          <input type="checkbox" id="animations-enabled" checked>
+          <span>Animations <em>— smooth transitions, entrances, and effects throughout the app</em></span>
+        </label>
+        <label class="check-row industrial-only">
+          <input type="checkbox" id="crt-effects">
+          <span>CRT effects <em>— scanlines, vignette, animated noise</em></span>
+        </label>
+      </div>
+
+      <div class="tab-pane" data-pane="how-to-use">
+        <div class="how-to-use-content">
+          <h3 style="margin-top:0">What is Throttlr?</h3>
+          <p>Throttlr lets you control the network for any single app on your computer — slow it down, drop packets, freeze it, or block it entirely. It's used for testing how apps behave on bad connections, lag-switching in games, debugging timeouts, and offline simulation. Most users use it to give themselves an advantage in competitive games or test how their own software handles network failures.</p>
+
+          <h3>Quick start (60 seconds)</h3>
+          <ol>
+            <li><strong>Pick an app.</strong> Click the big "Click here to choose application" bar at the top, or drag &amp; drop an <code>.exe</code> onto the window. Throttlr will only affect that one app — everything else stays normal.</li>
+            <li><strong>Pick a function.</strong> Toggle on <em>Lag</em>, <em>Drop</em>, <em>Throttle</em>, <em>Freeze</em>, <em>Block</em>, or <em>Fun</em>. Each one does something different — read the description in the row.</li>
+            <li><strong>Tweak the numbers.</strong> Each function has its own settings — delay in ms for Lag, percentage for Drop, KB/s for Throttle, etc.</li>
+            <li><strong>Hit Start.</strong> Big yellow button bottom-right, or press <code>F5</code>. The app's network is now under your control until you hit Stop.</li>
+          </ol>
+
+          <h3>The functions in plain English</h3>
+          <ul>
+            <li><strong>Lag</strong> — adds a delay before packets are sent or received. Set 250ms and every action takes a quarter-second longer to register. Realistic for simulating distant servers.</li>
+            <li><strong>Drop</strong> — randomly throws packets in the bin. 30% drop = 3 out of 10 packets never arrive. Good for simulating bad WiFi.</li>
+            <li><strong>Throttle</strong> — caps bandwidth. 50 KB/s makes the app behave like it's on dial-up.</li>
+            <li><strong>Freeze</strong> — holds packets in a queue and releases them all at once when you stop. Classic lag-switch behavior.</li>
+            <li><strong>Block</strong> — drops 100% of matching packets. The app loses connection completely.</li>
+            <li><strong>Fun</strong> — randomized chaos. Drops, lag, jitter all at random intervals. For when you want unpredictable.</li>
+          </ul>
+
+          <h3>Quick presets</h3>
+          <p>The five colored cards near the top — <em>Slow Connection</em>, <em>Connection Killer</em>, <em>Freeze Burst</em>, <em>Spike</em>, <em>DNS Block</em> — are one-click setups. Click one and the function rows below configure themselves automatically. Save your own presets via the <strong>Save current as preset</strong> button.</p>
+
+          <h3>Hotkeys</h3>
+          <p>Default hotkeys work system-wide, including in fullscreen games:</p>
+          <ul>
+            <li><code>F5</code> — Start / Stop</li>
+            <li><code>F8</code> — toggle Freeze</li>
+            <li><code>F9</code> — toggle Block</li>
+            <li><code>F10</code> — toggle Fun</li>
+          </ul>
+          <p>Rebind them in <strong>Settings → Hotkeys</strong>. Click a hotkey button, then press the key (or side mouse button) you want to use.</p>
+
+          <h3>Themes</h3>
+          <p>Throttlr ships with a few built-in looks (Industrial, Midnight, Windows 7, Optimised). You can also install community themes — click <strong>More themes</strong> in <strong>Appearance</strong> to browse the gallery, then drop the downloaded <code>.json</code> + <code>.css</code> files into your themes folder. Pick a theme with customizable colors and a <strong>Customize</strong> tab appears here in Settings to dial it in.</p>
+
+          <h3>Floating overlay</h3>
+          <p>Throttlr's overlay window stays on top of every app — useful for monitoring stats while you're in a game. Drag it to position; lock it in <strong>Settings → Overlay</strong> once you have it where you want it. The overlay follows your selected theme.</p>
+
+          <h3>Tips</h3>
+          <ul>
+            <li>Run as admin — required for network filtering on Windows.</li>
+            <li>Multi-target lets you affect multiple apps at once. Click the Multi-target button next to the app picker.</li>
+            <li>If hotkeys don't fire in a specific game, that game probably has anti-cheat hooking lower than Throttlr can. Try windowed mode.</li>
+            <li>The Network Topology view (<strong>Topology</strong> in the tools rail) shows live connections from your selected app — useful for picking specific endpoints to block.</li>
+          </ul>
+        </div>
+      </div>
+
+      <div class="tab-pane" data-pane="hotkeys">
+        <div class="field-row"><label>Start / Stop</label><button id="hk-startstop" class="hotkey-btn" data-value="F5" type="button">F5</button></div>
+        <div class="field-row"><label>Freeze</label><button id="hk-freeze" class="hotkey-btn" data-value="F8" type="button">F8</button></div>
+        <div class="field-row"><label>Block</label><button id="hk-block" class="hotkey-btn" data-value="F9" type="button">F9</button></div>
+        <div class="field-row"><label>Fun mode</label><button id="hk-fun" class="hotkey-btn" data-value="F10" type="button">F10</button></div>
+        <div class="field-row">
+          <label>Killswitch <em>— disables ALL functions instantly</em></label>
+          <button id="hk-killswitch" class="hotkey-btn" data-value="" type="button">— None —</button>
+        </div>
+        <label class="check-row" style="margin-top:14px">
+          <input type="checkbox" id="hotkey-notifications">
+          <span>Show toast when a hotkey fires</span>
+        </label>
+        <p class="hint-text">Click any field above and press a key to bind it. <strong>Esc</strong> cancels, <strong>Backspace</strong> unbinds. Hotkeys fire globally — including from fullscreen games — using a low-level keyboard hook so they work even when other apps have grabbed the same key.</p>
+      </div>
+
+      <div class="tab-pane" data-pane="overlay">
+        <label class="check-row">
+          <input type="checkbox" id="show-overlay">
+          <span>Show floating overlay window</span>
+        </label>
+        <div class="field-row">
+          <label>Mode</label>
+          <select id="overlay-mode" class="param-input param-select">
+            <option value="compact">Compact <em>— small, status + 3 stats</em></option>
+            <option value="advanced">Advanced <em>— bigger, all stats + functions</em></option>
+            <option value="custom">Custom <em>— use the layout below</em></option>
+          </select>
+        </div>
+        <label class="check-row">
+          <input type="checkbox" id="overlay-locked">
+          <span>Lock overlay position <em>— prevents accidental drag</em></span>
+        </label>
+        <div class="field-row">
+          <label>Opacity</label>
+          <div class="slider-with-display">
+            <input type="range" id="overlay-opacity" class="slider-input" min="30" max="100" value="95">
+            <span class="unit" id="overlay-opacity-display">95%</span>
+          </div>
+        </div>
+
+        <hr class="modal-rule">
+
+        <label class="field-label">Customize layout — drag rows to reorder, toggle to show/hide</label>
+        <ul class="layout-list" id="layout-list"></ul>
+        <div class="row-actions">
+          <select id="add-row-type" class="param-input param-select">
+            <option value="status_row">Status row</option>
+            <option value="status_row_kbps">Status row + KB/s</option>
+            <option value="app_row">App name row</option>
+            <option value="stats3">Stats (3 cells)</option>
+            <option value="stats4">Stats (4 cells)</option>
+            <option value="kbps_row">KB/s rate row</option>
+            <option value="volume_row">Volume row</option>
+            <option value="funcs_row">Functions chip row</option>
+          </select>
+          <button class="btn-stencil" id="add-row-btn" type="button"><span>+</span> Add row</button>
+          <button class="btn-stencil" id="reset-layout-btn" type="button">↺ Reset to default</button>
+        </div>
+        <p class="hint-text">Editing the layout automatically switches Mode to <em>Custom</em>. Compact and Advanced have fixed layouts.</p>
+
+        <label class="field-label" style="margin-top:18px">Layout presets</label>
+        <div class="profile-save-row">
+          <input type="text" id="preset-name" placeholder="New preset name…" class="search-input">
+          <button class="btn-hazard" id="save-preset-btn" type="button">Save current</button>
+        </div>
+        <div class="profile-list" id="preset-list">
+          <div class="loading">No saved presets yet</div>
+        </div>
+
+        <hr class="modal-rule">
+
+        <label class="check-row">
+          <input type="checkbox" id="screen-border-enabled">
+          <span>Screen-edge indicator <em>— gradient glow on monitor edges</em></span>
+        </label>
+        <div class="field-row">
+          <label>Show duration</label>
+          <div class="slider-with-display">
+            <input type="range" id="border-duration" class="slider-input" min="500" max="10000" step="100" value="2000">
+            <span class="unit" id="border-duration-display">2.0s</span>
+          </div>
+        </div>
+        <div class="field-row">
+          <label>Border thickness</label>
+          <div class="slider-with-display">
+            <input type="range" id="border-feather" class="slider-input" min="40" max="200" step="5" value="90">
+            <span class="unit" id="border-feather-display">90 px</span>
+          </div>
+        </div>
+        <div class="row-actions">
+          <button class="btn-stencil" id="preview-border-running" type="button">▶ Preview green</button>
+          <button class="btn-stencil" id="preview-border-stopped" type="button">■ Preview red</button>
+        </div>
+        <p class="hint-text">A click-through glow on the edges of your monitor. Fades automatically after the configured duration.</p>
+
+        <hr class="modal-rule">
+
+        <label class="check-row">
+          <input type="checkbox" id="overlay-stream-safe">
+          <span>Stream-safe rendering <em>— opaque background, bolder borders, easier to capture in OBS / Discord</em></span>
+        </label>
+        <label class="check-row">
+          <input type="checkbox" id="overlay-ghost-mode">
+          <span>Ghost mode <em>— overlay invisible to screen-capture (you see it, viewers don't)</em></span>
+        </label>
+      </div>
+
+      <div class="tab-pane" data-pane="sound">
+        <label class="check-row"><input type="checkbox" id="sound-enabled"><span>Enable sound feedback</span></label>
+        <div class="field-row">
+          <label>Volume</label>
+          <div class="slider-with-display">
+            <input type="range" id="sound-volume" class="slider-input" min="0" max="100" value="100">
+            <span class="unit" id="sound-volume-display">100%</span>
+          </div>
+        </div>
+        <button class="btn-stencil" id="test-sound" style="margin-top:8px">▶ Test sound</button>
+
+        <hr class="modal-rule">
+
+        <label class="check-row"><input type="checkbox" id="sound-effects-enabled"><span>Function sound effects <em>— distinct cues per function (laser, heartbeat, glitch…)</em></span></label>
+        <div class="field-row">
+          <label>Effect volume</label>
+          <div class="slider-with-display">
+            <input type="range" id="sound-effects-volume" class="slider-input" min="0" max="100" value="80">
+            <span class="unit" id="sound-effects-volume-display">80%</span>
+          </div>
+        </div>
+        <div class="row-actions">
+          <button class="btn-stencil" data-test-fx="lag">Lag</button>
+          <button class="btn-stencil" data-test-fx="drop">Drop</button>
+          <button class="btn-stencil" data-test-fx="throttle">Throttle</button>
+          <button class="btn-stencil" data-test-fx="freeze">Freeze</button>
+          <button class="btn-stencil" data-test-fx="block">Block</button>
+          <button class="btn-stencil" data-test-fx="fun">Fun</button>
+        </div>
+      </div>
+
+      <div class="tab-pane" data-pane="behavior">
+        <label class="check-row"><input type="checkbox" id="auto-start"><span>Auto-start capture on launch</span></label>
+        <label class="check-row"><input type="checkbox" id="auto-clear"><span>Discard held packets when freeze ends <em>— skip replay</em></span></label>
+        <label class="check-row"><input type="checkbox" id="reset-stats-start"><span>Reset stats when capture starts</span></label>
+        <label class="check-row"><input type="checkbox" id="confirm-quit"><span>Confirm before quitting while running</span></label>
+        <!-- v3.1.0 — Auto-pause on idle. Warns when target app has gone quiet. -->
+        <label class="check-row">
+          <input type="checkbox" id="auto-pause-idle">
+          <span>Warn me when the target app goes idle <em>— shows a toast if no packets are seen for the configured time below. Doesn't auto-stop, just nudges you in case you forgot Throttlr is running.</em></span>
+        </label>
+        <div class="field-row">
+          <label>Idle threshold (seconds)</label>
+          <input type="number" id="auto-pause-idle-seconds" class="text-input" value="30" min="5" max="3600">
+        </div>
+        <label class="check-row">
+          <input type="checkbox" id="auto-load-preset">
+          <span>Restore last preset per app <em>— prompt to reload your config when you pick an app you've used before</em></span>
+        </label>
+        <label class="check-row">
+          <input type="checkbox" id="show-drop-pct">
+          <span>Show drop rate % badge <em>— small red badge next to the Drop counter showing the % of total packets being dropped right now</em></span>
+        </label>
+        <div class="field-row">
+          <label>Auto-stop after</label>
+          <div class="slider-with-display">
+            <input type="number" id="auto-stop-minutes" class="param-input" min="0" max="600" value="0" style="width:80px">
+            <span class="unit">min</span>
+            <span class="hint-inline">(0 = disabled)</span>
+          </div>
+        </div>
+        <button class="btn-stencil" id="reset-stats-btn">↺ Reset stats now</button>
+
+        <hr class="modal-rule">
+
+        <label class="field-label">Saved per-app presets</label>
+        <div class="per-app-presets-list" id="per-app-presets-list">
+          <div class="loading">No saved per-app presets</div>
+        </div>
+      </div>
+
+      <div class="tab-pane" data-pane="profile">
+        <label class="field-label">Throttlr Profile</label>
+        <p class="hint-text" style="margin-top:0;">
+          A <strong>profile</strong> is your full Throttlr setup — target apps, all 6 function settings, custom presets, filter script, and theme — saved as a single <code>.throttlr</code> file. Useful for backing up your configuration, syncing between PCs, or sharing with friends.
+        </p>
+
+        <div class="profile-actions">
+          <button class="btn-stencil profile-action-btn" id="profile-export-btn" type="button">
+            <span class="profile-action-icon">↓</span>
+            <span class="profile-action-label">Export current profile</span>
+            <span class="profile-action-sub">Save as a .throttlr file</span>
+          </button>
+          <button class="btn-stencil profile-action-btn" id="profile-import-btn" type="button">
+            <span class="profile-action-icon">↑</span>
+            <span class="profile-action-label">Import profile</span>
+            <span class="profile-action-sub">Load a .throttlr file</span>
+          </button>
+        </div>
+
+        <hr class="modal-rule">
+
+        <label class="field-label">What's included</label>
+        <ul class="profile-includes-list">
+          <li>Target applications (by name + path)</li>
+          <li>All 6 function settings (Lag / Drop / Throttle / Freeze / Block / Fun)</li>
+          <li>Direction settings (in / out for each function)</li>
+          <li>Custom presets you've saved</li>
+          <li>Filter Script</li>
+          <li>Theme + accent color</li>
+        </ul>
+        <p class="hint-text">Hotkeys, sound preferences, and overlay layout are <em>not</em> included — those are personal preferences, not part of a profile.</p>
+
+        <hr class="modal-rule">
+
+        <label class="field-label">Tip</label>
+        <p class="hint-text" style="margin-top:0;">
+          You can also <strong>drag a <code>.throttlr</code> file</strong> directly onto the Throttlr window to import it instantly — no need to open this menu.
+        </p>
+      </div>
+
+      <!-- ===== Automation tab (Phase 3 / v2.6.0) ===== -->
+      <div class="tab-pane" data-pane="automation">
+        <div class="auto-tab-head">
+          <div>
+            <label class="field-label" style="margin-bottom:4px;">Automation rules</label>
+            <p class="hint-text" style="margin:0;">
+              Rules fire automatically when their condition becomes true. Edge-triggered — they fire <em>once</em> per condition transition, not continuously.
+            </p>
+          </div>
+          <div class="auto-engine-toggle">
+            <label class="ll-toggle">
+              <input type="checkbox" id="auto-engine-enabled" checked>
+              <span class="toggle-track"></span>
+              <span class="toggle-label">Engine on</span>
+            </label>
+          </div>
+        </div>
+
+        <div class="auto-actions-row">
+          <button type="button" class="btn-stencil" id="auto-add-rule">+ New rule</button>
+          <span class="auto-recent" id="auto-recent-fire" hidden>
+            Last fired: <strong id="auto-recent-name">—</strong> · <span id="auto-recent-when">—</span>
+          </span>
+        </div>
+
+        <div class="auto-rules-list" id="auto-rules-list">
+          <!-- rule cards injected by JS -->
+        </div>
+
+        <div class="auto-empty" id="auto-empty" hidden>
+          <span class="auto-empty-icon">⚡</span>
+          <p>No rules yet.</p>
+          <p class="hint-text">Click <strong>+ New rule</strong> to create one — for example, "When Discord is running, throttle to 200 KB/s" or "Every weekday 9am-5pm, apply WiFi preset".</p>
+        </div>
+      </div>
+
+      <!-- ===== Network tab (Phase 5 / v3.0.0) ===== -->
+      <div class="tab-pane" data-pane="network">
+
+        <!-- v3.1.0 (network-visibility batch) — Latency probe -->
+        <div class="auto-tab-head">
+          <div>
+            <label class="field-label" style="margin-bottom:4px;">Latency probe</label>
+            <p class="hint-text" style="margin:0;">
+              Pings a host once per second and graphs the round-trip time as a cyan line overlay on the main traffic chart. Independent of capture — works even when the engine is off.
+            </p>
+          </div>
+          <div class="auto-engine-toggle">
+            <label class="ll-toggle">
+              <input type="checkbox" id="lat-probe-toggle">
+              <span class="toggle-track"></span>
+              <span class="toggle-label">Probe on</span>
+            </label>
+          </div>
+        </div>
+
+        <div class="field-row">
+          <label>Target host</label>
+          <input type="text" id="lat-probe-host" class="text-input" placeholder="1.1.1.1" maxlength="120" value="1.1.1.1">
+        </div>
+
+        <div class="info-row">
+          <span class="info-key">Latest</span>
+          <span class="info-val" id="lat-last">—</span>
+        </div>
+        <div class="info-row">
+          <span class="info-key">Average</span>
+          <span class="info-val" id="lat-avg">—</span>
+        </div>
+        <div class="info-row">
+          <span class="info-key">Min / Max</span>
+          <span class="info-val">
+            <span id="lat-min">—</span>
+            <span style="color:var(--text-muted);"> · </span>
+            <span id="lat-max">—</span>
+          </span>
+        </div>
+
+        <!-- v3.1.0 — Dedicated latency chart (independent of the main traffic graph) -->
+        <div class="latency-chart-wrap">
+          <canvas id="latency-chart" width="640" height="120"></canvas>
+        </div>
+
+        <hr class="modal-rule">
+
+        <!-- v3.1.0 (real-networks batch) — Test my internet -->
+        <label class="field-label">Test my internet</label>
+        <p class="hint-text" style="margin-top:0;">
+          Measures your real download speed against Cloudflare's edge, then suggests throttle values relative to that speed. Useful when you want to feel "30% of my actual bandwidth" without doing the math.
+        </p>
+        <div class="auto-actions-row">
+          <button type="button" class="btn-stencil" id="speedtest-run-btn">▶ Run speedtest</button>
+          <span class="auto-recent" id="speedtest-status">Idle</span>
+        </div>
+        <div id="speedtest-result" hidden style="margin-top:10px;">
+          <div class="info-row">
+            <span class="info-key">Download speed</span>
+            <span class="info-val" id="speedtest-mbps">—</span>
+          </div>
+          <div class="info-row">
+            <span class="info-key">As KB/s</span>
+            <span class="info-val" id="speedtest-kbps">—</span>
+          </div>
+          <p class="hint-text" style="margin: 10px 0 4px 0;">Apply a throttle relative to this:</p>
+          <div class="auto-actions-row">
+            <button type="button" class="btn-stencil" data-speedtest-apply="30">30%</button>
+            <button type="button" class="btn-stencil" data-speedtest-apply="50">50%</button>
+            <button type="button" class="btn-stencil" data-speedtest-apply="70">70%</button>
+            <button type="button" class="btn-stencil" data-speedtest-apply="10">10% (3G feel)</button>
+          </div>
+        </div>
+
+        <hr class="modal-rule">
+
+        <!-- v3.1.0 (real-networks batch) — Bandwidth quota -->
+        <div class="auto-tab-head">
+          <div>
+            <label class="field-label" style="margin-bottom:4px;">Bandwidth quota</label>
+            <p class="hint-text" style="margin:0;">
+              When the targeted app uses more than this much data today, automatically apply the chosen action. Counter resets at midnight. Useful for "stop Steam after 5GB so it doesn't kill my hotspot."
+            </p>
+          </div>
+          <div class="auto-engine-toggle">
+            <label class="ll-toggle">
+              <input type="checkbox" id="quota-on-toggle">
+              <span class="toggle-track"></span>
+              <span class="toggle-label">Quota on</span>
+            </label>
+          </div>
+        </div>
+        <div class="field-row">
+          <label>Daily cap (MB)</label>
+          <input type="number" id="quota-mb" class="text-input" value="1000" min="1" max="999999">
+        </div>
+        <div class="field-row">
+          <label>When exceeded</label>
+          <select id="quota-action" class="text-input">
+            <option value="throttle">Throttle (KB/s below)</option>
+            <option value="block">Block all traffic</option>
+            <option value="notify">Just notify, don't act</option>
+          </select>
+        </div>
+        <div class="field-row">
+          <label>Throttle limit (KB/s)</label>
+          <input type="number" id="quota-throttle-kbps" class="text-input" value="50" min="1" max="999999">
+        </div>
+        <div class="info-row">
+          <span class="info-key">Today's usage</span>
+          <span class="info-val" id="quota-today">—</span>
+        </div>
+
+        <hr class="modal-rule">
+
+        <!-- v3.1.0 (real-networks batch) — DNS chaos -->
+        <div class="auto-tab-head">
+          <div>
+            <label class="field-label" style="margin-bottom:4px;">DNS chaos</label>
+            <p class="hint-text" style="margin:0;">
+              Drops every outbound DNS query while on — apps see DNS as broken. Great for "what happens when my app's DNS server dies?" testing. Note: browsers using DNS-over-HTTPS (Chrome, Firefox modern defaults) bypass this — only classic DNS is affected.
+            </p>
+          </div>
+          <div class="auto-engine-toggle">
+            <label class="ll-toggle">
+              <input type="checkbox" id="dns-chaos-toggle">
+              <span class="toggle-track"></span>
+              <span class="toggle-label">DNS chaos on</span>
+            </label>
+          </div>
+        </div>
+
+        <hr class="modal-rule">
+
+        <!-- v3.1.0 (real-networks batch) — Bursty packet loss -->
+        <label class="field-label">Drop pattern (Bursty mode)</label>
+        <p class="hint-text" style="margin-top:0;">
+          Affects how the Drop function distributes losses. Uniform = random drop chance per packet (default). Bursty = drops cluster together (e.g. lose 4 packets in a row, then 20 clean, repeat) — much more like real bad wireless or congested networks.
+        </p>
+        <div class="field-row">
+          <label>Pattern</label>
+          <select id="drop-pattern" class="text-input">
+            <option value="uniform">Uniform random (default)</option>
+            <option value="bursty">Bursty (clustered)</option>
+          </select>
+        </div>
+        <div class="field-row">
+          <label>Burst length (packets in a row)</label>
+          <input type="number" id="drop-burst-len" class="text-input" value="4" min="1" max="100">
+        </div>
+        <div class="field-row">
+          <label>Gap length (clean packets between bursts)</label>
+          <input type="number" id="drop-gap-len" class="text-input" value="20" min="1" max="1000">
+        </div>
+
+        <hr class="modal-rule">
+
+        <div class="auto-tab-head">
+          <div>
+            <label class="field-label" style="margin-bottom:4px;">LAN coordination</label>
+            <p class="hint-text" style="margin:0;">
+              Discover and control Throttlr running on other PCs on your network. Communication is signed with HMAC-SHA256 and only paired peers can send commands.
+            </p>
+          </div>
+          <div class="auto-engine-toggle">
+            <label class="ll-toggle">
+              <input type="checkbox" id="lan-enabled-toggle">
+              <span class="toggle-track"></span>
+              <span class="toggle-label">LAN sync on</span>
+            </label>
+          </div>
+        </div>
+
+        <div class="field-row">
+          <label>This PC's display name</label>
+          <input type="text" id="lan-display-name" class="text-input" placeholder="My PC" maxlength="48">
+        </div>
+
+        <div class="auto-actions-row" style="margin-top:14px;">
+          <button type="button" class="btn-stencil" id="lan-refresh-btn">⟳ Refresh peers</button>
+          <button type="button" class="btn-stencil" id="lan-pair-open-btn">+ Open pairing window</button>
+          <span class="auto-recent" id="lan-pair-status"></span>
+        </div>
+
+        <!-- Pairing code display -->
+        <div class="lan-pair-code-box" id="lan-pair-code-box" hidden>
+          <div class="lan-pair-code-label">Share this code with the other PC:</div>
+          <div class="lan-pair-code" id="lan-pair-code">000000</div>
+          <div class="lan-pair-code-meta" id="lan-pair-code-expires">Valid for 60s</div>
+          <button type="button" class="btn-stencil" id="lan-pair-cancel-btn">Cancel</button>
+        </div>
+
+        <!-- Pending incoming pairing requests -->
+        <div class="lan-pending-list" id="lan-pending-list" hidden>
+          <div class="field-label">Pending pairing requests</div>
+          <!-- request cards injected by JS -->
+        </div>
+
+        <label class="field-label" style="margin-top:18px;">Discovered peers</label>
+        <div class="lan-peer-list" id="lan-peer-list">
+          <div class="auto-empty">
+            <span class="auto-empty-icon">🌐</span>
+            <p>No peers discovered yet.</p>
+            <p class="hint-text">Make sure LAN sync is on, both PCs are on the same network, and Windows Firewall isn't blocking Throttlr's UDP/TCP ports.</p>
+          </div>
+        </div>
+
+        <details class="lan-advanced">
+          <summary>Advanced ports</summary>
+          <p class="hint-text">Only change if there's a port conflict. Both PCs must use matching ports.</p>
+          <div class="field-row two-col">
+            <div>
+              <label>Discovery (UDP)</label>
+              <input type="number" id="lan-discovery-port" min="1024" max="65535" value="7878" disabled>
+            </div>
+            <div>
+              <label>Control (TCP)</label>
+              <input type="number" id="lan-control-port" min="1024" max="65535" value="7879" disabled>
+            </div>
+          </div>
+          <p class="hint-text">Port editing is disabled in this version — coming in v3.1.</p>
+        </details>
+      </div>
+
+      <div class="tab-pane" data-pane="advanced">
+        <label class="field-label">Engine</label>
+        <div class="field-row">
+          <label>Stats refresh interval</label>
+          <div class="slider-with-display">
+            <input type="range" id="stats-interval" class="slider-input" min="50" max="1000" step="10" value="200">
+            <span class="unit" id="stats-interval-display">200 ms</span>
+          </div>
+        </div>
+        <div class="field-row">
+          <label>Process list refresh</label>
+          <div class="slider-with-display">
+            <input type="range" id="apps-refresh" class="slider-input" min="500" max="10000" step="100" value="2000">
+            <span class="unit" id="apps-refresh-display">2.0s</span>
+          </div>
+        </div>
+        <label class="check-row">
+          <input type="checkbox" id="skip-localhost">
+          <span>Skip localhost traffic <em>— don't filter packets to/from 127.0.0.1</em></span>
+        </label>
+        <label class="check-row">
+          <input type="checkbox" id="verbose-logging">
+          <span>Verbose logging</span>
+        </label>
+
+        <hr class="modal-rule">
+
+        <label class="field-label">Window &amp; UI</label>
+        <label class="check-row">
+          <input type="checkbox" id="main-always-on-top">
+          <span>Keep Throttlr always on top</span>
+        </label>
+        <div class="field-row">
+          <label>Animation speed</label>
+          <div class="slider-with-display">
+            <input type="range" id="anim-speed" class="slider-input" min="0.3" max="2" step="0.1" value="1">
+            <span class="unit" id="anim-speed-display">1.0×</span>
+          </div>
+        </div>
+        <div class="field-row">
+          <label>Toast duration</label>
+          <div class="slider-with-display">
+            <input type="range" id="toast-duration" class="slider-input" min="1500" max="10000" step="100" value="3500">
+            <span class="unit" id="toast-duration-display">3.5s</span>
+          </div>
+        </div>
+        <div class="field-row">
+          <label>Number formatting</label>
+          <select id="number-format" class="param-input param-select">
+            <option value="raw">Raw (1,234,567)</option>
+            <option value="abbrev">Abbreviated (1.2M)</option>
+          </select>
+        </div>
+        <label class="check-row">
+          <input type="checkbox" id="tooltips-enabled">
+          <span>Show tooltips on hover</span>
+        </label>
+        <label class="check-row">
+          <input type="checkbox" id="animated-icon">
+          <span>Animated taskbar icon while running <em>— subtle pulse so you can see at a glance</em></span>
+        </label>
+
+        <hr class="modal-rule">
+
+        <label class="field-label">Achievements</label>
+        <div class="row-actions">
+          <button class="btn-stencil" id="show-achievements-btn" type="button">🏆 View achievements</button>
+        </div>
+        <p class="hint-text">Unlock-as-you-go milestones. Each one fires once and is saved forever.</p>
+
+        <hr class="modal-rule">
+
+        <label class="field-label">Profiles</label>
+        <div class="field-row">
+          <label>Auto-load profile on launch</label>
+          <select id="auto-load-profile" class="param-input param-select">
+            <option value="">(none)</option>
+          </select>
+        </div>
+
+        <hr class="modal-rule">
+
+        <label class="field-label">Diagnostics</label>
+        <div class="row-actions">
+          <button class="btn-stencil" id="show-diag-btn" type="button">⛬ Show capture state</button>
+        </div>
+        <p class="hint-text">If a function isn't visibly working, click this to confirm the target app is set, what's actually toggled on, and how many packets each stage has processed.</p>
+
+        <hr class="modal-rule">
+
+        <label class="field-label">Settings storage</label>
+        <div class="row-actions">
+          <button class="btn-stencil" id="export-settings-btn" type="button">↓ Export</button>
+          <button class="btn-stencil" id="import-settings-btn" type="button">↑ Import</button>
+          <button class="btn-stencil danger" id="reset-settings-btn" type="button">⚠ Reset all to defaults</button>
+        </div>
+        <p class="hint-text">Export saves all settings to a JSON file you can back up or share. Reset returns everything to factory defaults.</p>
+      </div>
+
+      <div class="tab-pane" data-pane="info">
+
+        <!-- v3.1.1 — Prominent update banner. Hidden unless an update
+             is available — when shown, it's loud and unmissable.
+             Sits ABOVE the hero so it's the first thing seen. -->
+        <div class="info-update-banner" id="info-update-banner" hidden>
+          <div class="iub-stripe"></div>
+          <div class="iub-content">
+            <div class="iub-icon">↑</div>
+            <div class="iub-text">
+              <div class="iub-title">New version available</div>
+              <div class="iub-sub">
+                Throttlr <span id="iub-version">—</span> is ready to install.
+                Click the button to update now.
+              </div>
+            </div>
+            <button class="iub-btn" id="iub-install-btn" type="button">
+              <span class="iub-btn-icon">↑</span>
+              <span>Install now</span>
+            </button>
+          </div>
+        </div>
+
+        <!-- Hero version block — current version up top, prominent -->
+        <div class="info-hero">
+          <div class="info-hero-side">
+            <span class="info-hero-label">You're running</span>
+            <span class="info-hero-version" id="info-current-version">v—</span>
+          </div>
+          <div class="info-hero-pill" id="info-status-pill">
+            <span class="info-pill-dot"></span>
+            <span class="info-pill-text" id="info-status-text">checking…</span>
+          </div>
+        </div>
+
+        <!-- Update status — latest version + last-checked + actions -->
+        <label class="field-label">Updates</label>
+        <div class="info-row">
+          <span class="info-key">Latest release</span>
+          <span class="info-val" id="info-latest-version">checking…</span>
+        </div>
+        <div class="info-row">
+          <span class="info-key">Last checked</span>
+          <span class="info-val info-val-quiet" id="info-last-checked">—</span>
+        </div>
+
+        <div class="info-check-row">
+          <button class="btn-check-now" id="info-recheck-btn" type="button">
+            <span class="btn-check-icon">↻</span>
+            <span class="btn-check-label">Check for updates</span>
+          </button>
+          <button class="btn-hazard btn-install-now" id="info-update-now-btn" type="button" hidden>
+            ↑ Install update
+          </button>
+        </div>
+        <p class="hint-text" id="info-update-hint" style="margin-top:8px;">
+          Throttlr checks GitHub on every launch. When an update is available, it downloads in seconds and the app restarts to apply it.
+        </p>
+
+        <hr class="modal-rule">
+
+        <!-- System diagnostics — admin status, WinDivert, Windows version, engine state -->
+        <label class="field-label">System</label>
+        <div class="info-row">
+          <span class="info-key">Platform</span>
+          <span class="info-val" id="info-sys-platform">—</span>
+        </div>
+        <div class="info-row">
+          <span class="info-key">CPU</span>
+          <span class="info-val" id="info-sys-cpu">—</span>
+        </div>
+        <div class="info-row">
+          <span class="info-key">Memory</span>
+          <span class="info-val" id="info-sys-ram">—</span>
+        </div>
+        <div class="info-row">
+          <span class="info-key">Hostname</span>
+          <span class="info-val" id="info-sys-hostname">—</span>
+        </div>
+        <div class="info-row">
+          <span class="info-key">Network adapters</span>
+          <span class="info-val" id="info-sys-adapters">—</span>
+        </div>
+        <div class="info-row">
+          <span class="info-key">Privileges</span>
+          <span class="info-val" id="info-sys-admin">
+            <span class="info-status-dot" data-status="unknown"></span>
+            <span id="info-sys-admin-text">—</span>
+          </span>
+        </div>
+        <div class="info-row">
+          <span class="info-key">WinDivert driver</span>
+          <span class="info-val" id="info-sys-pydivert">
+            <span class="info-status-dot" data-status="unknown"></span>
+            <span id="info-sys-pydivert-text">—</span>
+          </span>
+        </div>
+        <div class="info-row">
+          <span class="info-key">Engine</span>
+          <span class="info-val" id="info-sys-engine">
+            <span class="info-status-dot" data-status="unknown"></span>
+            <span id="info-sys-engine-text">—</span>
+          </span>
+        </div>
+        <div class="info-row">
+          <span class="info-key">Throttlr build</span>
+          <span class="info-val" id="info-sys-build">—</span>
+        </div>
+        <div class="info-row">
+          <span class="info-key">Python runtime</span>
+          <span class="info-val" id="info-sys-python">—</span>
+        </div>
+
+        <!-- v3.1.0 — WinDivert filter preview (read-only diagnostic) -->
+        <label class="field-label" style="margin-top:14px;">WinDivert filter</label>
+        <pre id="info-sys-filter" class="info-filter-preview">—</pre>
+
+        <hr class="modal-rule">
+
+        <!-- About — concise, with bug-report instead of source-code link -->
+        <label class="field-label">About</label>
+        <p class="hint-text" style="margin-top:0;">
+          <strong>Throttlr</strong> is a per-application network throttler for Windows — selectively lag, drop, throttle, freeze, or block any app's traffic.
+          <br><br>
+          Built solo by <strong>Billy's Matrix</strong>. © 2026 Billy Papastavros. All rights reserved. No telemetry, no accounts, no servers.
+        </p>
+        <div class="row-actions">
+          <button class="btn-stencil" id="info-show-changelog-btn" type="button">⛬ View changelog</button>
+          <button class="btn-stencil" id="info-replay-tour-btn" type="button">↻ Replay first-run tour</button>
+        </div>
+
+        <hr class="modal-rule">
+
+        <!-- v3.1.3 — Feedback section. Quick path for users to send bugs,
+             feature ideas, or general thoughts straight to the dev via the
+             web feedback form. Mirrors the donate block's structure so the
+             two reads as a consistent pair. -->
+        <label class="field-label">Feedback</label>
+        <div class="info-feedback">
+          <div class="info-feedback-text">
+            <strong>Bug, idea, or thought?</strong> Send feedback straight to the dev. Takes 30 seconds — bugs, feature requests, anything.
+          </div>
+          <button class="btn-feedback" id="info-feedback-btn" type="button">
+            <svg class="btn-feedback-icon btn-feedback-icon-lg" viewBox="0 0 24 24" aria-hidden="true">
+              <path fill="currentColor" d="M20 2H4c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h4l4 4 4-4h4c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2zM7 9h10v2H7V9zm6 5H7v-2h6v2zm4-6H7V6h10v2z"/>
+            </svg>
+            <span>Send feedback</span>
+          </button>
+        </div>
+
+        <!-- v3.1.1 — Optional donation section. Throttlr is free and always
+             will be; this just gives users who appreciate the app a way to
+             say thanks. No gating, no nag screens, just a button. -->
+        <label class="field-label">Support development</label>
+        <div class="info-donate">
+          <div class="info-donate-text">
+            <strong>Throttlr is free and always will be.</strong> If it's saved you time, you can buy me a coffee — totally optional, no pressure.
+          </div>
+          <button class="btn-donate" id="info-donate-btn" type="button">
+            <span class="btn-donate-icon-mask btn-donate-icon-mask-lg" aria-hidden="true"></span>
+            <span>Buy me a coffee</span>
+          </button>
+        </div>
+      </div>
+
+      <!-- v3.0.7 — Customize tab pane (side-positioned tab). Shown only when
+           a custom theme with customizable colors is active. Tab button itself
+           lives on the right side of the modal-tabs row via .tab-btn-side. -->
+      <div class="tab-pane" data-pane="customize">
+        <div id="theme-customize-section" class="theme-customize-section">
+          <div class="theme-customize-head">
+            <label class="field-label" id="theme-customize-title">Customize</label>
+            <button type="button" class="btn-stencil theme-customize-reset" id="theme-customize-reset" title="Restore all colors to the theme's defaults">
+              <span>↺</span> Reset
+            </button>
+          </div>
+          <div id="theme-customize-rows"></div>
+          <p class="hint-text" id="theme-customize-empty" style="display:none">
+            No custom theme is active. Pick one from the <strong>Appearance</strong> tab.
+          </p>
+        </div>
+      </div>
+
+    </div>
+    <div class="modal-foot">
+      <button class="btn-stencil" data-close-modal="settings-modal">Cancel</button>
+      <button class="btn-hazard" id="save-settings">Save</button>
+    </div>
+  </div>
+</div>
+
+<div class="modal-overlay" id="profiles-modal" hidden>
+  <div class="modal modal-anim">
+    <div class="modal-corners"></div>
+    <div class="modal-head">
+      <span class="m-num">▼</span>
+      <h2>Profiles</h2>
+      <button class="modal-close" data-close-modal="profiles-modal">×</button>
+    </div>
+    <div class="modal-body">
+      <div class="profile-save-row">
+        <input type="text" id="profile-name" placeholder="New profile name…" class="search-input">
+        <button class="btn-hazard" id="save-profile">Save current</button>
+      </div>
+      <div class="profile-list" id="profile-list">
+        <div class="loading">Loading…</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- =================== APP PICKER MODAL =================== -->
+<div class="modal-overlay" id="app-picker-modal" hidden>
+  <div class="modal modal-anim app-picker">
+    <div class="modal-corners"></div>
+    <div class="modal-head">
+      <span class="m-num">▼</span>
+      <h2>Choose application</h2>
+      <button class="modal-close" data-close-modal="app-picker-modal">×</button>
+    </div>
+    <div class="modal-tabs ap-tabs">
+      <button class="tab-btn active" data-ap-filter="open">Open apps</button>
+      <button class="tab-btn" data-ap-filter="background">Background</button>
+      <button class="tab-btn" data-ap-filter="all">All</button>
+      <span class="ap-count" id="ap-count"></span>
+    </div>
+    <div class="ap-search-wrap">
+      <span class="search-prefix">›</span>
+      <input type="text" id="ap-search" class="search-input" placeholder="Search apps by name…" autocomplete="off">
+    </div>
+    <div class="modal-body ap-body">
+      <div class="app-list" id="ap-list">
+        <div class="loading">Loading processes…</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="toast-container" id="toast-container"></div>
+
+<!-- =================== ACHIEVEMENTS MODAL =================== -->
+<div class="modal-overlay" id="achievements-modal" hidden>
+  <div class="modal modal-anim">
+    <div class="modal-corners"></div>
+    <div class="modal-head">
+      <span class="m-num icon" data-icon="trophy"></span>
+      <h2>Achievements</h2>
+      <button class="modal-close" data-close-modal="achievements-modal">×</button>
+    </div>
+    <div class="modal-body">
+      <div class="ach-progress">
+        <span id="ach-progress-text">0 / 10 unlocked</span>
+        <div class="ach-progress-bar"><div class="ach-progress-fill" id="ach-progress-fill" style="width:0%"></div></div>
+      </div>
+      <div class="ach-list" id="ach-list"></div>
+    </div>
+  </div>
+</div>
+
+<!-- =================== PER-APP PRESET PROMPT =================== -->
+<div class="modal-overlay" id="per-app-prompt" hidden>
+  <div class="modal modal-anim">
+    <div class="modal-corners"></div>
+    <div class="modal-head">
+      <span class="m-num icon" data-icon="rotate"></span>
+      <h2>Restore last preset?</h2>
+    </div>
+    <div class="modal-body">
+      <p>You've used <b id="per-app-prompt-name">this app</b> before with a saved configuration:</p>
+      <!-- v3.1.1 — Show exactly what's about to be restored so the user can decide -->
+      <div class="per-app-summary" id="per-app-summary">
+        <div class="per-app-summary-empty">No active functions in saved config</div>
+      </div>
+      <p class="hint-text" style="margin-top:14px;">You can disable this prompt in Settings → Behavior.</p>
+    </div>
+    <div class="modal-foot">
+      <button class="btn-stencil" id="per-app-prompt-decline">Skip</button>
+      <button class="btn-hazard" id="per-app-prompt-accept">Restore</button>
+    </div>
+  </div>
+</div>
+
+<!-- =================== SAVE QUICK PRESET PROMPT =================== -->
+<div class="modal-overlay" id="save-preset-modal" hidden>
+  <div class="modal modal-anim modal-small">
+    <div class="modal-corners"></div>
+    <div class="modal-head">
+      <span class="m-num icon" data-icon="folder"></span>
+      <h2>Save quick preset</h2>
+      <button class="modal-close" data-close-modal="save-preset-modal">×</button>
+    </div>
+    <div class="modal-body">
+      <label class="field-label">Name</label>
+      <input type="text" id="save-preset-name" class="search-input" placeholder="My preset…" maxlength="32">
+      <label class="field-label" style="margin-top:14px">Icon</label>
+      <div class="preset-icon-picker">
+        <button type="button" class="preset-icon-opt selected" data-pi="⚡">⚡</button>
+        <button type="button" class="preset-icon-opt" data-pi="🐌">🐌</button>
+        <button type="button" class="preset-icon-opt" data-pi="💀">💀</button>
+        <button type="button" class="preset-icon-opt" data-pi="🎤">🎤</button>
+        <button type="button" class="preset-icon-opt" data-pi="❄️">❄️</button>
+        <button type="button" class="preset-icon-opt" data-pi="🚫">🚫</button>
+        <button type="button" class="preset-icon-opt" data-pi="🔥">🔥</button>
+        <button type="button" class="preset-icon-opt" data-pi="🎮">🎮</button>
+        <button type="button" class="preset-icon-opt" data-pi="📡">📡</button>
+        <button type="button" class="preset-icon-opt" data-pi="💥">💥</button>
+        <button type="button" class="preset-icon-opt" data-pi="🌐">🌐</button>
+        <button type="button" class="preset-icon-opt" data-pi="🛰️">🛰️</button>
+      </div>
+    </div>
+    <div class="modal-foot">
+      <button class="btn-stencil" data-close-modal="save-preset-modal">Cancel</button>
+      <button class="btn-hazard" id="save-preset-confirm">Save</button>
+    </div>
+  </div>
+</div>
+
+<!-- =================== ACHIEVEMENT TOAST =================== -->
+<div class="achievement-toast-container" id="achievement-toast-container"></div>
+
+<!-- =================== CONNECTION INSPECTOR =================== -->
+<div class="modal-overlay" id="inspector-modal" hidden>
+  <div class="modal modal-anim modal-wide">
+    <div class="modal-corners"></div>
+    <div class="modal-head">
+      <span class="m-num icon" data-icon="search"></span>
+      <h2>Connection Inspector</h2>
+      <button class="modal-close" data-close-modal="inspector-modal">×</button>
+    </div>
+    <div class="modal-tabs ap-tabs">
+      <span class="ap-count" id="insp-count">0 connections</span>
+      <div class="insp-view-toggle">
+        <button type="button" class="insp-view-btn active" data-insp-view="table">
+          <span class="insp-view-icon">▦</span>Table
+        </button>
+        <button type="button" class="insp-view-btn" data-insp-view="map">
+          <span class="insp-view-icon">⊕</span>Map
+        </button>
+      </div>
+      <div class="insp-tools">
+        <label class="check-row" style="margin:0">
+          <input type="checkbox" id="insp-pause"><span>Pause refresh</span>
+        </label>
+        <input type="text" id="insp-search" class="search-input" placeholder="Filter by host or IP…" style="width:240px">
+        <button type="button" class="insp-export-btn" id="insp-export-csv" title="Export current connections to CSV">
+          ↓ Export CSV
+        </button>
+      </div>
+    </div>
+    <div class="modal-body insp-body" data-insp-active-view="table">
+
+      <!-- TABLE VIEW (existing, default) -->
+      <div class="insp-pane insp-pane-table" data-insp-pane="table">
+        <table class="insp-table">
+          <thead>
+            <tr>
+              <th>Host</th>
+              <th>Remote</th>
+              <th>Country</th>
+              <th>Proto</th>
+              <th>↑ Out</th>
+              <th>↓ In</th>
+              <th>Age</th>
+              <th>Idle</th>
+            </tr>
+          </thead>
+          <tbody id="insp-tbody">
+            <tr class="insp-empty"><td colspan="8">No connections yet — start capture and the table will populate.</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <!-- MAP VIEW (new) -->
+      <div class="insp-pane insp-pane-map" data-insp-pane="map" hidden>
+        <div class="insp-map-wrap">
+          <!-- v2.5.2 — stats bar shows live aggregate counts above the map -->
+          <div class="geo-map-stats" id="geo-map-stats">
+            <div class="geo-stat">
+              <span class="geo-stat-label">Countries</span>
+              <span class="geo-stat-val" id="geo-stat-countries">0</span>
+            </div>
+            <div class="geo-stat">
+              <span class="geo-stat-label">Connections</span>
+              <span class="geo-stat-val" id="geo-stat-conns">0</span>
+            </div>
+            <div class="geo-stat">
+              <span class="geo-stat-label">↓ In</span>
+              <span class="geo-stat-val" id="geo-stat-in">0 B</span>
+            </div>
+            <div class="geo-stat">
+              <span class="geo-stat-label">↑ Out</span>
+              <span class="geo-stat-val" id="geo-stat-out">0 B</span>
+            </div>
+            <div class="geo-stat geo-stat-top">
+              <span class="geo-stat-label">Top country</span>
+              <span class="geo-stat-val" id="geo-stat-top">—</span>
+            </div>
+          </div>
+          <svg id="geo-map" class="geo-map" viewBox="0 0 1000 500" preserveAspectRatio="xMidYMid meet">
+            <!-- v3.0.7 — atmospheric/ocean styling. defs hold the gradients
+                 that paint the ocean background and the land fill so the map
+                 has depth instead of looking like a flat stencil. -->
+            <defs>
+              <radialGradient id="geo-ocean-grad" cx="50%" cy="48%" r="75%">
+                <stop offset="0%"   stop-color="rgba(20,30,45,0.95)"/>
+                <stop offset="60%"  stop-color="rgba(10,16,24,0.95)"/>
+                <stop offset="100%" stop-color="rgba(5,8,12,1.0)"/>
+              </radialGradient>
+              <linearGradient id="geo-land-grad" x1="0%" y1="0%" x2="0%" y2="100%">
+                <stop offset="0%"   stop-color="rgba(255,200,70,0.22)"/>
+                <stop offset="50%"  stop-color="rgba(255,184,0,0.16)"/>
+                <stop offset="100%" stop-color="rgba(180,130,0,0.10)"/>
+              </linearGradient>
+              <linearGradient id="geo-land-grad-mid" x1="0%" y1="0%" x2="0%" y2="100%">
+                <stop offset="0%"   stop-color="rgba(150,200,255,0.22)"/>
+                <stop offset="50%"  stop-color="rgba(120,180,240,0.16)"/>
+                <stop offset="100%" stop-color="rgba(80,120,200,0.10)"/>
+              </linearGradient>
+              <filter id="geo-land-glow" x="-10%" y="-10%" width="120%" height="120%">
+                <feGaussianBlur stdDeviation="0.4" result="blur"/>
+                <feMerge>
+                  <feMergeNode in="blur"/>
+                  <feMergeNode in="SourceGraphic"/>
+                </feMerge>
+              </filter>
+            </defs>
+            <!-- Ocean / deep background -->
+            <rect class="geo-ocean" x="0" y="0" width="1000" height="500"/>
+            <!-- Lat/lon graticule (drawn before land so land sits on top) -->
+            <g id="geo-map-grid" class="geo-grid"></g>
+            <!-- World map paths injected here at startup -->
+            <g id="geo-map-land" filter="url(#geo-land-glow)"></g>
+            <!-- v3.0.7 — US state borders (overlay) -->
+            <g id="geo-map-states" class="geo-states"></g>
+            <!-- Continent / region labels (always visible at low zoom) -->
+            <g id="geo-map-labels" class="geo-labels"></g>
+            <!-- v3.0.7 — Country labels (revealed when zoomed in past ~2x) -->
+            <g id="geo-map-country-labels" class="geo-country-labels"></g>
+            <!-- v3.0.7 — US state labels (revealed when zoomed in past ~4x) -->
+            <g id="geo-map-state-labels" class="geo-state-labels"></g>
+            <!-- Connection dots (added/updated dynamically) -->
+            <g id="geo-map-dots"></g>
+          </svg>
+          <!-- v3.0.7 — pan/zoom controls. Drag to pan, scroll wheel to zoom,
+               or use these buttons. Bottom-right corner so they don't collide
+               with the legend (bottom-left) or stats bar (top). -->
+          <div class="geo-map-controls" id="geo-map-controls">
+            <button type="button" class="geo-ctrl-btn" id="geo-zoom-in" title="Zoom in (or scroll wheel up)">+</button>
+            <button type="button" class="geo-ctrl-btn" id="geo-zoom-out" title="Zoom out (or scroll wheel down)">−</button>
+            <button type="button" class="geo-ctrl-btn geo-ctrl-reset" id="geo-reset-view" title="Reset zoom &amp; pan to fit world">⊕</button>
+            <div class="geo-zoom-label" id="geo-zoom-label">100%</div>
+            <div class="geo-map-hint" id="geo-map-hint">drag<br>scroll</div>
+          </div>
+          <div class="geo-map-tooltip" id="geo-map-tooltip" hidden>
+            <div class="geo-tt-host" id="geo-tt-host">—</div>
+            <div class="geo-tt-meta" id="geo-tt-meta">—</div>
+            <div class="geo-tt-stats" id="geo-tt-stats">—</div>
+          </div>
+          <div class="geo-map-legend">
+            <div class="geo-legend-item">
+              <span class="geo-legend-dot active"></span>
+              <span class="geo-legend-label">Active connection</span>
+            </div>
+            <div class="geo-legend-item">
+              <span class="geo-legend-dot idle"></span>
+              <span class="geo-legend-label">Idle / closed</span>
+            </div>
+            <div class="geo-legend-item geo-legend-info">
+              dot size = total bytes &middot; pulse = recent traffic
+            </div>
+          </div>
+          <div class="geo-map-empty" id="geo-map-empty">
+            <span class="geo-empty-icon">⊕</span>
+            <span class="geo-empty-text">No connections yet</span>
+            <span class="geo-empty-sub">Start capture on a target app — connections will plot here as they're made</span>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<!-- =================== INSPECTOR CONNECTION DETAIL (v2.5.2) =================== -->
+<div class="modal-overlay" id="insp-detail-modal" hidden>
+  <div class="modal modal-anim">
+    <div class="modal-corners"></div>
+    <div class="modal-head">
+      <span class="m-num icon" data-icon="search"></span>
+      <h2>Connection details</h2>
+      <button class="modal-close" data-close-modal="insp-detail-modal">×</button>
+    </div>
+    <div class="modal-body insp-detail-body">
+      <div class="insp-detail-host" id="insp-detail-host">—</div>
+      <div class="insp-detail-addr" id="insp-detail-addr">—</div>
+
+      <div class="insp-detail-grid">
+        <div class="insp-detail-cell">
+          <span class="insp-detail-label">Country</span>
+          <span class="insp-detail-val" id="insp-detail-country">—</span>
+        </div>
+        <div class="insp-detail-cell">
+          <span class="insp-detail-label">Protocol</span>
+          <span class="insp-detail-val" id="insp-detail-proto">—</span>
+        </div>
+        <div class="insp-detail-cell">
+          <span class="insp-detail-label">Process ID</span>
+          <span class="insp-detail-val" id="insp-detail-pid">—</span>
+        </div>
+        <div class="insp-detail-cell">
+          <span class="insp-detail-label">Local port</span>
+          <span class="insp-detail-val" id="insp-detail-localport">—</span>
+        </div>
+      </div>
+
+      <div class="insp-detail-section-label">Traffic</div>
+      <div class="insp-detail-grid insp-detail-grid-traffic">
+        <div class="insp-detail-cell">
+          <span class="insp-detail-label">↑ Bytes out</span>
+          <span class="insp-detail-val insp-detail-up" id="insp-detail-bytes-out">0 B</span>
+        </div>
+        <div class="insp-detail-cell">
+          <span class="insp-detail-label">↓ Bytes in</span>
+          <span class="insp-detail-val insp-detail-down" id="insp-detail-bytes-in">0 B</span>
+        </div>
+        <div class="insp-detail-cell">
+          <span class="insp-detail-label">↑ Packets out</span>
+          <span class="insp-detail-val" id="insp-detail-pkts-out">0</span>
+        </div>
+        <div class="insp-detail-cell">
+          <span class="insp-detail-label">↓ Packets in</span>
+          <span class="insp-detail-val" id="insp-detail-pkts-in">0</span>
+        </div>
+        <div class="insp-detail-cell insp-detail-total">
+          <span class="insp-detail-label">Total transferred</span>
+          <span class="insp-detail-val" id="insp-detail-total">0 B</span>
+        </div>
+      </div>
+
+      <div class="insp-detail-section-label">Timing</div>
+      <div class="insp-detail-grid">
+        <div class="insp-detail-cell">
+          <span class="insp-detail-label">Age</span>
+          <span class="insp-detail-val" id="insp-detail-age">—</span>
+        </div>
+        <div class="insp-detail-cell">
+          <span class="insp-detail-label">Idle</span>
+          <span class="insp-detail-val" id="insp-detail-idle">—</span>
+        </div>
+      </div>
+
+      <div class="insp-detail-actions">
+        <button class="btn-stencil" id="insp-detail-copy-host">Copy hostname</button>
+        <button class="btn-stencil" id="insp-detail-copy-addr">Copy address</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- =================== PRACTICE PING =================== -->
+<div class="modal-overlay" id="pingmode-modal" hidden>
+  <div class="modal modal-anim modal-small">
+    <div class="modal-corners"></div>
+    <div class="modal-head">
+      <span class="m-num icon" data-icon="activity"></span>
+      <h2>Practice Ping</h2>
+      <button class="modal-close" data-close-modal="pingmode-modal">×</button>
+    </div>
+    <div class="modal-body">
+      <p class="hint-text">Find out what high-ping gameplay actually feels like. Pick a scenario or set a custom value — Throttlr applies it to your target app's traffic.</p>
+      <div class="ping-presets">
+        <button type="button" class="ping-preset" data-ping="5">
+          <div class="pp-name">LAN</div><div class="pp-ms">5 ms</div>
+          <div class="pp-feel">Crisp local connection</div>
+        </button>
+        <button type="button" class="ping-preset" data-ping="30">
+          <div class="pp-name">Good</div><div class="pp-ms">30 ms</div>
+          <div class="pp-feel">Smooth competitive play</div>
+        </button>
+        <button type="button" class="ping-preset" data-ping="60">
+          <div class="pp-name">OK</div><div class="pp-ms">60 ms</div>
+          <div class="pp-feel">Noticeable but playable</div>
+        </button>
+        <button type="button" class="ping-preset" data-ping="100">
+          <div class="pp-name">Rough</div><div class="pp-ms">100 ms</div>
+          <div class="pp-feel">Distant server feel</div>
+        </button>
+        <button type="button" class="ping-preset" data-ping="200">
+          <div class="pp-name">Bad</div><div class="pp-ms">200 ms</div>
+          <div class="pp-feel">Hits register late</div>
+        </button>
+        <button type="button" class="ping-preset" data-ping="400">
+          <div class="pp-name">Unplayable</div><div class="pp-ms">400 ms</div>
+          <div class="pp-feel">Everything is in the past</div>
+        </button>
+      </div>
+      <div class="field-row" style="margin-top:18px">
+        <label>Custom target</label>
+        <div class="slider-with-display">
+          <input type="range" id="ping-custom" class="slider-input" min="0" max="800" step="5" value="0">
+          <span class="unit" id="ping-custom-display">0 ms</span>
+        </div>
+      </div>
+      <div class="ping-status" id="ping-status">No practice-ping target active.</div>
+    </div>
+    <div class="modal-foot">
+      <button class="btn-stencil" id="ping-clear-btn">Clear (off)</button>
+      <button class="btn-hazard" id="ping-apply-btn">Apply target</button>
+    </div>
+  </div>
+</div>
+
+<!-- =================== RECORDINGS / REPLAY =================== -->
+<div class="modal-overlay" id="replay-modal" hidden>
+  <div class="modal modal-anim modal-wide">
+    <div class="modal-corners"></div>
+    <div class="modal-head">
+      <span class="m-num icon" data-icon="film"></span>
+      <h2>Recordings</h2>
+      <button class="modal-close" data-close-modal="replay-modal">×</button>
+    </div>
+    <div class="modal-body">
+      <div class="recordings-head">
+        <p class="hint-text" style="margin:0">Sessions captured with the Record button live here. Click one to scrub through it.</p>
+        <button class="btn-stencil btn-with-icon" id="open-recordings-folder"><span class="icon" data-icon="folder"></span>Open folder</button>
+      </div>
+      <div class="recordings-list" id="recordings-list">
+        <div class="loading">Loading…</div>
+      </div>
+      <div class="replay-viewer" id="replay-viewer" hidden>
+        <div class="rv-head">
+          <div class="rv-title" id="rv-title">—</div>
+          <div class="rv-head-tools">
+            <button class="rv-play-btn" id="rv-play-btn" title="Play / pause">
+              <span id="rv-play-icon" class="icon" data-icon="play"></span>
+            </button>
+            <select id="rv-speed" class="param-input param-select" title="Playback speed" style="width:70px">
+              <option value="0.25">0.25×</option>
+              <option value="0.5">0.5×</option>
+              <option value="1" selected>1×</option>
+              <option value="2">2×</option>
+              <option value="4">4×</option>
+              <option value="10">10×</option>
+            </select>
+            <button class="btn-stencil" id="rv-back">← Back to list</button>
+          </div>
+        </div>
+        <div class="rv-stats">
+          <div class="rv-stat"><div class="rv-l">Sent</div><div class="rv-v" id="rv-seen">0</div></div>
+          <div class="rv-stat"><div class="rv-l">Dropped</div><div class="rv-v" id="rv-dropped">0</div></div>
+          <div class="rv-stat"><div class="rv-l">Delayed</div><div class="rv-v" id="rv-delayed">0</div></div>
+          <div class="rv-stat"><div class="rv-l">Held</div><div class="rv-v" id="rv-held">0</div></div>
+          <div class="rv-stat"><div class="rv-l">Time</div><div class="rv-v" id="rv-time">00:00</div></div>
+        </div>
+        <input type="range" id="rv-scrub" class="rv-scrub" min="0" max="100" value="0">
+        <div class="rv-config" id="rv-config"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- =================== DOMAIN BLOCK CONFIG =================== -->
+<div class="modal-overlay" id="domain-block-modal" hidden>
+  <div class="modal modal-anim">
+    <div class="modal-corners"></div>
+    <div class="modal-head">
+      <span class="m-num icon" data-icon="ban"></span>
+      <h2>Domain blocklist</h2>
+      <button class="modal-close" data-close-modal="domain-block-modal">×</button>
+    </div>
+    <div class="modal-body">
+      <label class="field-label">Built-in lists</label>
+      <div class="block-lists" id="block-lists">
+        <!-- populated dynamically -->
+      </div>
+      <hr class="modal-rule">
+      <label class="field-label">Custom domains <em>— one per line, trailing-match (subdomains included)</em></label>
+      <textarea id="block-custom-text" class="search-input"
+                style="width:100%; min-height:120px; resize:vertical; font-family:Consolas,monospace"
+                placeholder="example.com&#10;ads.example.net"></textarea>
+    </div>
+    <div class="modal-foot">
+      <button class="btn-stencil" data-close-modal="domain-block-modal">Cancel</button>
+      <button class="btn-hazard" id="domain-block-save-btn">Apply</button>
+    </div>
+  </div>
+</div>
+
+<!-- =================== GEO COUNTRY PICKER =================== -->
+<div class="modal-overlay" id="geo-block-modal" hidden>
+  <div class="modal modal-anim">
+    <div class="modal-corners"></div>
+    <div class="modal-head">
+      <span class="m-num icon" data-icon="globe"></span>
+      <h2>Block by region</h2>
+      <button class="modal-close" data-close-modal="geo-block-modal">×</button>
+    </div>
+    <div class="modal-body">
+      <p class="hint-text">Geo lookup is /8-granular (region-level). Tap regions to toggle blocking. Drop a real GeoLite2 .mmdb at <code>~/.throttlr/geoip.mmdb</code> for finer accuracy.</p>
+      <div class="country-grid" id="country-grid">
+        <!-- populated dynamically -->
+      </div>
+    </div>
+    <div class="modal-foot">
+      <button class="btn-stencil" data-close-modal="geo-block-modal">Cancel</button>
+      <button class="btn-hazard" id="geo-block-save-btn">Apply</button>
+    </div>
+  </div>
+</div>
+
+<!-- =================== THROTTLR STUDIO (Phase 4 / v2.7.0) ===================
+     Visual timeline editor for .thrtlrec recordings. Multi-lane canvas with
+     drag-move / drag-resize / click-to-add / click-to-delete events. -->
+<div class="modal-overlay" id="studio-modal" hidden>
+  <div class="modal modal-anim modal-wide studio-modal">
+    <div class="modal-corners"></div>
+    <div class="modal-head">
+      <span class="m-num icon" data-icon="film"></span>
+      <h2>Throttlr Studio <span class="studio-subtitle" id="studio-subtitle"></span></h2>
+      <button class="modal-close" data-close-modal="studio-modal" id="studio-close-btn">×</button>
+    </div>
+    <div class="modal-body studio-body">
+      <!-- Toolbar: undo/redo, snap, zoom, save -->
+      <div class="studio-toolbar">
+        <div class="studio-tool-group">
+          <button class="studio-btn" id="studio-undo" title="Undo (Ctrl+Z)" disabled>
+            <span class="icon" data-icon="undo"></span><span>Undo</span>
+          </button>
+          <button class="studio-btn" id="studio-redo" title="Redo (Ctrl+Shift+Z)" disabled>
+            <span class="icon" data-icon="redo"></span><span>Redo</span>
+          </button>
+        </div>
+        <div class="studio-tool-group">
+          <label class="studio-label">Snap</label>
+          <select id="studio-snap" class="studio-select">
+            <option value="0">Off</option>
+            <option value="100">100 ms</option>
+            <option value="1000" selected>1 s</option>
+          </select>
+        </div>
+        <div class="studio-tool-group">
+          <button class="studio-btn" id="studio-zoom-out" title="Zoom out (-)">−</button>
+          <span class="studio-zoom-display" id="studio-zoom-display">100%</span>
+          <button class="studio-btn" id="studio-zoom-in" title="Zoom in (+)">+</button>
+          <button class="studio-btn" id="studio-zoom-fit" title="Fit timeline">Fit</button>
+        </div>
+        <div class="studio-tool-group studio-tool-spacer"></div>
+        <div class="studio-tool-group">
+          <span class="studio-time" id="studio-time">00:00.000 / 00:00.000</span>
+        </div>
+        <div class="studio-tool-group">
+          <button class="btn-stencil" id="studio-saveas-btn">Save as new…</button>
+          <button class="btn-hazard"   id="studio-save-btn">Save</button>
+        </div>
+      </div>
+
+      <!-- Main editor area: lane labels + canvas -->
+      <div class="studio-editor">
+        <div class="studio-lanes-labels" id="studio-lanes-labels">
+          <!-- Lane labels rendered by JS to match canvas lane heights -->
+        </div>
+        <div class="studio-canvas-wrap">
+          <canvas id="studio-canvas" width="900" height="320"></canvas>
+        </div>
+      </div>
+
+      <!-- Status / hint bar -->
+      <div class="studio-statusbar">
+        <span class="studio-hint" id="studio-hint">Click empty space on a lane to add an event. Drag a block to move it. Drag block edges to resize. Click a block then press Delete to remove it.</span>
+        <span class="studio-event-info" id="studio-event-info"></span>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- =================== TOPOLOGY (Phase 3) =================== -->
+<div class="modal-overlay" id="topology-modal" hidden>
+  <div class="modal modal-anim modal-wide">
+    <div class="modal-corners"></div>
+    <div class="modal-head">
+      <span class="m-num icon" data-icon="network"></span>
+      <h2>Network Topology</h2>
+      <button class="modal-close" data-close-modal="topology-modal">×</button>
+    </div>
+    <div class="modal-body" style="padding: 0">
+      <div class="topo-container">
+        <canvas id="topo-canvas" width="1000" height="600"></canvas>
+        <div class="topo-info" id="topo-info">
+          <div class="topo-info-empty">Hover a node for details</div>
+        </div>
+      </div>
+      <div class="topo-legend">
+        <span class="topo-leg-item"><span class="dot center"></span>Your machine</span>
+        <span class="topo-leg-item"><span class="dot remote"></span>Remote endpoint</span>
+        <span class="topo-leg-item"><span class="line"></span>Active flow (thicker = more traffic)</span>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- =================== PCAP (Phase 3) =================== -->
+<div class="modal-overlay" id="pcap-modal" hidden>
+  <div class="modal modal-anim">
+    <div class="modal-corners"></div>
+    <div class="modal-head">
+      <span class="m-num icon" data-icon="package"></span>
+      <h2>PCAP Capture</h2>
+      <button class="modal-close" data-close-modal="pcap-modal">×</button>
+    </div>
+    <div class="modal-body">
+      <p class="hint-text">Record raw packet bytes to a standard <code>.pcap</code> file you can open in Wireshark or tcpdump. Only your targeted app's traffic is captured.</p>
+      <div class="pcap-controls">
+        <button class="btn-hazard" id="pcap-toggle-btn">● Start PCAP</button>
+        <div class="pcap-status" id="pcap-status">Idle</div>
+      </div>
+      <hr class="modal-rule">
+      <div class="recordings-head">
+        <label class="field-label" style="margin:0">Saved captures</label>
+        <button class="btn-stencil btn-with-icon" id="open-pcap-folder"><span class="icon" data-icon="folder"></span>Open folder</button>
+      </div>
+      <div class="recordings-list" id="pcap-list">
+        <div class="loading">Loading…</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- =================== LIVE PACKET DUMP (v3.1.0 net-vis batch) =================== -->
+<div class="modal-overlay" id="pktdump-modal" hidden>
+  <div class="modal modal-anim modal-wide">
+    <div class="modal-corners"></div>
+    <div class="modal-head">
+      <span class="m-num icon" data-icon="activity"></span>
+      <h2>Live Packet Dump</h2>
+      <button class="modal-close" data-close-modal="pktdump-modal">×</button>
+    </div>
+    <div class="modal-body">
+      <p class="hint-text" style="margin-top:0;">
+        Live tail of packet headers. Capture must be running. Last 200 packets shown — older entries roll off automatically. Use the filter to grep by IP, port, or protocol.
+      </p>
+      <div class="auto-actions-row">
+        <button type="button" class="btn-stencil" id="pktdump-pause-btn">⏸ Pause</button>
+        <button type="button" class="btn-stencil" id="pktdump-clear-btn">⟲ Clear</button>
+        <input type="text" id="pktdump-filter" class="text-input" placeholder="Filter (e.g. 443, tcp, 1.1.1.1)…" autocomplete="off" spellcheck="false" style="flex:1;">
+        <span class="auto-recent" id="pktdump-status">Idle</span>
+      </div>
+      <pre id="pktdump-output" class="pktdump-output"></pre>
+    </div>
+    <div class="modal-foot">
+      <button class="btn-stencil" data-close-modal="pktdump-modal">Close</button>
+    </div>
+  </div>
+</div>
+
+<!-- =================== TEST MY SPEED (v3.1.1) =================== -->
+<div class="modal-overlay" id="speedtest-modal" hidden>
+  <div class="modal modal-anim modal-wide">
+    <div class="modal-corners"></div>
+    <div class="modal-head">
+      <span class="m-num icon" data-icon="zap"></span>
+      <h2>Test my Speed</h2>
+      <button class="modal-close" data-close-modal="speedtest-modal">×</button>
+    </div>
+    <div class="modal-body">
+
+      <!-- Idle state — before test starts -->
+      <div id="st-idle">
+        <p class="hint-text" style="margin-top:0;">
+          Comprehensive speed test against Cloudflare's edge. Measures latency, jitter, download throughput, and upload throughput. Takes about 30 seconds.
+        </p>
+        <div style="text-align:center; padding:30px 0;">
+          <button type="button" class="btn-stencil btn-large" id="st-start-btn" style="padding:14px 42px; font-size:15px;">▶ Start Speed Test</button>
+        </div>
+      </div>
+
+      <!-- Running state — phase indicators + live gauges -->
+      <div id="st-running" hidden>
+        <!-- Phase tracker -->
+        <div class="st-phases">
+          <div class="st-phase" data-phase="latency">
+            <span class="st-phase-dot"></span>
+            <span class="st-phase-label">Latency</span>
+            <span class="st-phase-value" id="st-phase-latency-val">—</span>
+          </div>
+          <div class="st-phase" data-phase="downloading">
+            <span class="st-phase-dot"></span>
+            <span class="st-phase-label">Download</span>
+            <span class="st-phase-value" id="st-phase-download-val">—</span>
+          </div>
+          <div class="st-phase" data-phase="uploading">
+            <span class="st-phase-dot"></span>
+            <span class="st-phase-label">Upload</span>
+            <span class="st-phase-value" id="st-phase-upload-val">—</span>
+          </div>
+        </div>
+
+        <!-- Live gauge -->
+        <div class="st-gauge-wrap">
+          <div class="st-gauge-label" id="st-gauge-label">Pinging server…</div>
+          <div class="st-gauge-value" id="st-gauge-value">—</div>
+          <div class="st-gauge-unit" id="st-gauge-unit">Mbps</div>
+          <div class="st-gauge-bar">
+            <div class="st-gauge-fill" id="st-gauge-fill"></div>
+          </div>
+          <div class="st-gauge-sub" id="st-gauge-sub">Initializing test…</div>
+        </div>
+      </div>
+
+      <!-- Error / Blocked state (v3.1.1 — replaces toast-then-reset behavior) -->
+      <div id="st-error" hidden>
+        <div style="text-align:center; padding:20px 16px;">
+          <div style="font-size:42px; margin-bottom:10px;">⚠</div>
+          <div id="st-error-title" style="font-size:18px; font-weight:600; color:#ff9b4a; margin-bottom:10px;">Test couldn't run</div>
+          <div id="st-error-msg" style="font-size:13px; color:var(--text-muted,#c8c8c8); line-height:1.55; max-width:480px; margin:0 auto 18px;">—</div>
+          <button type="button" class="btn-stencil" id="st-error-retry">↻ Try again</button>
+        </div>
+      </div>
+
+      <!-- Results state — verdict + details -->
+      <div id="st-results" hidden>
+        <!-- Verdict header -->
+        <div class="st-verdict">
+          <div class="st-verdict-tier" id="st-verdict-tier">—</div>
+          <div class="st-verdict-headline" id="st-verdict-headline">—</div>
+          <div class="st-verdict-desc" id="st-verdict-desc">—</div>
+        </div>
+
+        <!-- Speed cards grid -->
+        <div class="st-cards">
+          <div class="st-card">
+            <div class="st-card-label">DOWNLOAD</div>
+            <div class="st-card-value"><span id="st-r-download">—</span> <span class="st-card-unit">Mbps</span></div>
+          </div>
+          <div class="st-card">
+            <div class="st-card-label">UPLOAD</div>
+            <div class="st-card-value"><span id="st-r-upload">—</span> <span class="st-card-unit">Mbps</span></div>
+          </div>
+          <div class="st-card">
+            <div class="st-card-label">PING</div>
+            <div class="st-card-value"><span id="st-r-latency">—</span> <span class="st-card-unit">ms</span></div>
+          </div>
+          <div class="st-card">
+            <div class="st-card-label">JITTER</div>
+            <div class="st-card-value"><span id="st-r-jitter">—</span> <span class="st-card-unit">ms</span></div>
+          </div>
+        </div>
+
+        <!-- Detailed analysis -->
+        <div class="st-analysis">
+          <h3>What you can do with this</h3>
+          <ul id="st-capabilities"></ul>
+
+          <h3>Fun facts about your speed</h3>
+          <ul id="st-fun-facts"></ul>
+
+          <h3>Use-case ratings</h3>
+          <div class="st-use-cases" id="st-use-cases"></div>
+
+          <h3>Connection quality</h3>
+          <div class="st-quality-row">
+            <span class="st-q-label">Latency:</span>
+            <span class="st-q-value" id="st-q-latency">—</span>
+          </div>
+          <div class="st-q-detail" id="st-q-latency-detail">—</div>
+          <div class="st-quality-row" style="margin-top:10px;">
+            <span class="st-q-label">Jitter:</span>
+            <span class="st-q-value" id="st-q-jitter">—</span>
+          </div>
+          <div class="st-q-detail" id="st-q-jitter-detail">—</div>
+          <div class="st-ratio-note" id="st-ratio-note">—</div>
+
+          <!-- v3.1.1 — Throttlr presets that simulate worse conditions -->
+          <h3>Try simulating worse connections</h3>
+          <div class="st-sim-presets" id="st-sim-presets"></div>
+
+          <!-- v3.1.1 — Network details (ISP, public IP, adapter) -->
+          <h3>Network details</h3>
+          <div class="st-net-grid">
+            <div class="st-net-row"><span class="st-net-label">ISP:</span>          <span class="st-net-value" id="st-n-isp">—</span></div>
+            <div class="st-net-row"><span class="st-net-label">AS Number:</span>    <span class="st-net-value" id="st-n-asn">—</span></div>
+            <div class="st-net-row"><span class="st-net-label">Public IP:</span>    <span class="st-net-value" id="st-n-ip">—</span></div>
+            <div class="st-net-row"><span class="st-net-label">Location:</span>     <span class="st-net-value" id="st-n-location">—</span></div>
+            <div class="st-net-row"><span class="st-net-label">Adapter:</span>      <span class="st-net-value" id="st-n-adapter">—</span></div>
+            <div class="st-net-row"><span class="st-net-label">Adapter type:</span> <span class="st-net-value" id="st-n-adapter-type">—</span></div>
+            <div class="st-net-row"><span class="st-net-label">Local IP:</span>     <span class="st-net-value" id="st-n-local-ip">—</span></div>
+            <div class="st-net-row"><span class="st-net-label">Gateway:</span>      <span class="st-net-value" id="st-n-gateway">—</span></div>
+            <div class="st-net-row"><span class="st-net-label">DNS:</span>          <span class="st-net-value" id="st-n-dns">—</span></div>
+          </div>
+        </div>
+
+        <div style="text-align:center; margin-top:18px;">
+          <button type="button" class="btn-stencil" id="st-rerun-btn">↻ Run Again</button>
+        </div>
+      </div>
+
+    </div>
+    <div class="modal-foot">
+      <button class="btn-stencil" data-close-modal="speedtest-modal">Close</button>
+    </div>
+  </div>
+</div>
+
+<!-- =================== FILTER SCRIPT (Phase 3) =================== -->
+<div class="modal-overlay" id="script-modal" hidden>
+  <div class="modal modal-anim modal-wide">
+    <div class="modal-corners"></div>
+    <div class="modal-head">
+      <span class="m-num icon" data-icon="zap"></span>
+      <h2>Filter Script</h2>
+      <button class="modal-close" data-close-modal="script-modal">×</button>
+    </div>
+    <div class="modal-body">
+      <p class="hint-text">Write a custom expression that runs against every packet. Compile to validate, then enable. Sandboxed — no system access.</p>
+      <div class="script-toolbar">
+        <label class="check-row" style="margin:0">
+          <input type="checkbox" id="script-enabled"><span>Enable script</span>
+        </label>
+        <select id="script-action" class="param-input param-select" style="width:160px">
+          <option value="drop">Drop matching</option>
+          <option value="keep_only">Keep only matching</option>
+        </select>
+      </div>
+      <textarea id="script-source" class="search-input"
+                style="width:100%; min-height:140px; resize:vertical; font-family:'JetBrains Mono','Consolas',monospace; font-size:13px"
+                placeholder="pkt.dst_port == 443 and pkt.size > 500"></textarea>
+      <div class="script-status" id="script-status">Not compiled</div>
+
+      <!-- v3.0.9 — Live diagnostics panel. Polls bridge.getFilterScriptStats()
+           while the modal is open so the user can SEE whether their expression
+           is firing. Without this they have no idea — matches() swallows
+           errors per-packet for safety and just returns False. -->
+      <div class="script-diagnostics" id="script-diagnostics" hidden>
+        <div class="diag-head">Live diagnostics</div>
+        <div class="diag-grid">
+          <div class="diag-cell">
+            <div class="diag-label">Packets evaluated</div>
+            <div class="diag-value" id="diag-eval">0</div>
+          </div>
+          <div class="diag-cell">
+            <div class="diag-label">Matched <span class="diag-sub" id="diag-action-sub">(dropped)</span></div>
+            <div class="diag-value" id="diag-matched">0</div>
+          </div>
+          <div class="diag-cell">
+            <div class="diag-label">Match rate</div>
+            <div class="diag-value" id="diag-rate">—</div>
+          </div>
+          <div class="diag-cell diag-cell-err">
+            <div class="diag-label">Eval errors</div>
+            <div class="diag-value" id="diag-errors">0</div>
+          </div>
+        </div>
+        <div class="diag-last-error" id="diag-last-error" hidden></div>
+        <div class="diag-hint" id="diag-hint" hidden></div>
+      </div>
+
+      <!-- v3.0.9 — collapsible "How filter scripts work" explainer with the
+           gotchas that bite people (especially pkt.host being empty most of
+           the time, QUIC vs TCP, country DB requirement, etc.) -->
+      <details class="script-how-to">
+        <summary>How filter scripts work — read me first</summary>
+        <div class="how-to-body">
+          <p><strong>What this is:</strong> a custom expression that runs against every packet the targeted app sends or receives. If the expression returns <code>true</code>, the action you picked (Drop / Keep only) fires. If it returns <code>false</code>, the packet passes through normally.</p>
+
+          <p><strong>Step by step to actually test one:</strong></p>
+          <ol class="how-to-list">
+            <li>Pick a target app at the top of Throttlr's main page (Chrome, a game, whatever).</li>
+            <li>Open this modal, paste an expression, click <strong>Compile</strong>. Make sure the status line shows <code>Compiled</code> (green).</li>
+            <li>Tick <strong>Enable script</strong>.</li>
+            <li>Choose <strong>Drop matching</strong> (kills packets where expression is true) or <strong>Keep only matching</strong> (kills everything else).</li>
+            <li>Click <strong>Save &amp; apply</strong>.</li>
+            <li>Press <strong>Start</strong> on the main page (or hit F5).</li>
+            <li>Use the target app and watch the diagnostics panel above — you'll see Evaluated/Matched count up in real time.</li>
+          </ol>
+
+          <p class="how-to-section-h">⚠ Common gotchas</p>
+          <ul class="how-to-list">
+            <li><strong><code>pkt.host</code> is usually empty.</strong> Throttlr only sets the host field on TLS handshake packets where the server name is visible in the clear (ClientHello SNI). Encrypted data packets after the handshake have an empty host. So <code>contains(pkt.host, "googlevideo")</code> matches a handful of packets, not most of them. Use it for blocking-style filters (drop the handshake → app can't talk to that host) rather than throttling-style (drop a % of data packets).</li>
+            <li><strong>Modern YouTube uses QUIC (UDP), not HTTPS (TCP).</strong> Chrome's default is QUIC on UDP 443. SNI works for QUIC too but only on the very first packet — so the same caveat as above applies, even stronger.</li>
+            <li><strong><code>pkt.country</code> needs the GeoIP database.</strong> If GeoIP isn't loaded the country is always empty string and your filter matches nothing. Check the bottom of the Network tab in Settings for the GeoIP status.</li>
+            <li><strong>Silent errors return false.</strong> If your script raises an exception (typo, undefined variable, divide-by-zero) it gets caught and counted in <em>Eval errors</em> above. The packet passes through unchanged. Watch the error counter — if it's high, your script has a bug.</li>
+            <li><strong>Compile ≠ enable.</strong> You have to tick <em>Enable script</em> AND click <em>Save &amp; apply</em>. A compiled-but-disabled script is just sitting there doing nothing.</li>
+            <li><strong>Some traffic is too cheap to drop.</strong> If your match rate is 1% and the app only sends 10 packets/second, dropping 0.1 packet/sec won't be noticeable. Aim for filters that match 30%+ of meaningful traffic for visible effects.</li>
+          </ul>
+
+          <p class="how-to-section-h">✅ Tested expressions that visibly work</p>
+          <ul class="how-to-list">
+            <li><code>random() &lt; 0.3</code> — drop 30% of every packet. Always works, instantly visible (think bad WiFi).</li>
+            <li><code>pkt.size &gt; 1000 and random() &lt; 0.5</code> — drop half of all big packets. Kills throughput while keeping connections alive.</li>
+            <li><code>pkt.proto == "UDP" and random() &lt; 0.4</code> — drop 40% of UDP. Devastating for games, leaves regular browsing intact.</li>
+            <li><code>pkt.dst_port == 443 and random() &lt; 0.5</code> — drop half of HTTPS. Most modern web traffic dies.</li>
+          </ul>
+        </div>
+      </details>
+
+      <div class="script-cheatsheet">
+        <div class="cs-title">Available variables &amp; functions</div>
+        <div class="cs-grid">
+          <div><code>pkt.src_port</code> · <code>pkt.dst_port</code></div>
+          <div><code>pkt.src_addr</code> · <code>pkt.dst_addr</code></div>
+          <div><code>pkt.size</code> · <code>pkt.proto</code> (TCP/UDP)</div>
+          <div><code>pkt.is_outbound</code></div>
+          <div><code>pkt.host</code> (TLS SNI hostname)</div>
+          <div><code>pkt.country</code> (2-letter region)</div>
+          <div><code>random()</code> · <code>len(s)</code> · <code>lower(s)</code></div>
+          <div><code>startswith(s, p)</code> · <code>endswith(s, p)</code> · <code>contains(s, p)</code></div>
+        </div>
+        <div class="cs-title" style="margin-top:10px">Examples</div>
+        <div class="cs-examples">
+          <code>pkt.dst_port == 443 and pkt.size > 500</code>
+          <code>endswith(pkt.host, ".discord.gg") and random() &lt; 0.3</code>
+          <code>pkt.country == "RU" or pkt.country == "CN"</code>
+          <code>pkt.proto == "UDP" and pkt.dst_port &gt;= 50000</code>
+        </div>
+      </div>
+    </div>
+    <div class="modal-foot">
+      <button class="btn-stencil" id="script-compile-btn">⚙ Compile</button>
+      <button class="btn-hazard" id="script-save-btn">Save &amp; apply</button>
+    </div>
+  </div>
+</div>
+
+<!-- =================== AUTOMATION RULE EDITOR (Phase 3 / v2.6.0) =================== -->
+<!-- Modal used for both creating and editing rules. Form fields below the
+     condition/action selectors swap in/out based on the chosen type. -->
+<div class="modal-overlay" id="auto-edit-modal" hidden>
+  <div class="modal modal-anim auto-edit-modal">
+    <div class="modal-corners"></div>
+    <div class="modal-head">
+      <span class="modal-icon">⚡</span>
+      <h2 id="auto-edit-title">New automation rule</h2>
+      <button class="modal-close" data-close-modal="auto-edit-modal" id="auto-edit-close">×</button>
+    </div>
+    <div class="modal-body">
+      <div class="field-row">
+        <label class="field-label">Rule name</label>
+        <input type="text" id="auto-rule-name" class="text-input" placeholder="e.g. Throttle Discord during work hours">
+      </div>
+
+      <div class="auto-edit-section">
+        <label class="field-label">When (condition)</label>
+        <select id="auto-cond-type" class="select-input">
+          <option value="schedule">⏰ Schedule — time of day + weekday</option>
+          <option value="app_running">🎯 App is running</option>
+          <option value="bandwidth">📊 Bandwidth exceeds threshold</option>
+          <option value="conn_count">🔢 Connection count exceeds threshold</option>
+        </select>
+
+        <!-- Schedule fields -->
+        <div class="auto-cond-fields" data-cond-pane="schedule">
+          <div class="field-row two-col">
+            <div>
+              <label>From</label>
+              <input type="time" id="auto-cond-start" value="09:00">
+            </div>
+            <div>
+              <label>To</label>
+              <input type="time" id="auto-cond-end" value="17:00">
+            </div>
+          </div>
+          <label>On these days</label>
+          <div class="auto-weekday-row" id="auto-weekday-row">
+            <label><input type="checkbox" data-wd="0" checked> Mon</label>
+            <label><input type="checkbox" data-wd="1" checked> Tue</label>
+            <label><input type="checkbox" data-wd="2" checked> Wed</label>
+            <label><input type="checkbox" data-wd="3" checked> Thu</label>
+            <label><input type="checkbox" data-wd="4" checked> Fri</label>
+            <label><input type="checkbox" data-wd="5"> Sat</label>
+            <label><input type="checkbox" data-wd="6"> Sun</label>
+          </div>
+        </div>
+
+        <!-- App-running fields -->
+        <div class="auto-cond-fields" data-cond-pane="app_running" hidden>
+          <label>Process name</label>
+          <input type="text" id="auto-cond-app" class="text-input" placeholder="e.g. Discord.exe" list="auto-cond-app-list">
+          <datalist id="auto-cond-app-list"></datalist>
+          <p class="hint-text">Match is case-insensitive. The condition is true while the process is in the running process list.</p>
+        </div>
+
+        <!-- Bandwidth fields -->
+        <div class="auto-cond-fields" data-cond-pane="bandwidth" hidden>
+          <label>Threshold (KB/s, total in + out)</label>
+          <input type="number" id="auto-cond-bw" class="text-input" min="1" step="10" value="500">
+          <p class="hint-text">Fires when current total bandwidth exceeds this number.</p>
+        </div>
+
+        <!-- Conn count fields -->
+        <div class="auto-cond-fields" data-cond-pane="conn_count" hidden>
+          <label>Threshold (number of connections)</label>
+          <input type="number" id="auto-cond-cc" class="text-input" min="1" step="1" value="50">
+          <p class="hint-text">Fires when active tracked connections exceed this number.</p>
+        </div>
+
+        <div class="auto-test-row">
+          <button type="button" class="btn-stencil" id="auto-test-cond">Test condition now</button>
+          <span class="auto-test-result" id="auto-test-result"></span>
+        </div>
+      </div>
+
+      <div class="auto-edit-section">
+        <label class="field-label">Then (action)</label>
+        <select id="auto-action-type" class="select-input">
+          <option value="preset">📦 Apply quick preset</option>
+          <option value="function">🎚 Toggle a function on/off</option>
+          <option value="toast">💬 Show a toast notification</option>
+          <option value="capture">▶︎ Start or stop capture</option>
+        </select>
+
+        <!-- Preset fields -->
+        <div class="auto-action-fields" data-action-pane="preset">
+          <label>Preset</label>
+          <select id="auto-action-preset" class="select-input">
+            <option value="">— select a preset —</option>
+          </select>
+          <p class="hint-text">Only your saved Quick Presets are listed. Save a preset first if this is empty.</p>
+        </div>
+
+        <!-- Function toggle -->
+        <div class="auto-action-fields" data-action-pane="function" hidden>
+          <div class="field-row two-col">
+            <div>
+              <label>Function</label>
+              <select id="auto-action-func" class="select-input">
+                <option value="lag">Lag</option>
+                <option value="drop">Drop</option>
+                <option value="throttle">Throttle</option>
+                <option value="freeze">Freeze</option>
+                <option value="block">Block</option>
+                <option value="fun">Fun</option>
+              </select>
+            </div>
+            <div>
+              <label>State</label>
+              <select id="auto-action-on" class="select-input">
+                <option value="true">Turn ON</option>
+                <option value="false">Turn OFF</option>
+              </select>
+            </div>
+          </div>
+        </div>
+
+        <!-- Toast -->
+        <div class="auto-action-fields" data-action-pane="toast" hidden>
+          <label>Message</label>
+          <input type="text" id="auto-action-toast" class="text-input" placeholder="e.g. Bandwidth spike detected" maxlength="200">
+        </div>
+
+        <!-- Capture -->
+        <div class="auto-action-fields" data-action-pane="capture" hidden>
+          <label>Command</label>
+          <select id="auto-action-cap" class="select-input">
+            <option value="start">Start capture</option>
+            <option value="stop">Stop capture</option>
+          </select>
+        </div>
+      </div>
+    </div>
+    <div class="modal-foot">
+      <button class="btn-stencil" id="auto-edit-cancel">Cancel</button>
+      <button class="btn-hazard" id="auto-edit-save">Save rule</button>
+    </div>
+  </div>
+</div>
+
+<!-- =================== TUTORIAL (first launch) =================== -->
+<!-- Multi-page tutorial carousel. Shown automatically on first launch,
+     blocks the rest of the UI via its overlay. User must either step
+     through every page (Get Started enables on the last page) or
+     click Skip Tutorial. Re-openable from Settings. -->
+<div class="modal-overlay tutorial-overlay" id="tutorial-modal" hidden>
+  <div class="modal modal-anim modal-tutorial">
+    <div class="modal-corners"></div>
+    <div class="tutorial-progress">
+      <div class="tp-bar"><div class="tp-fill" id="tp-fill"></div></div>
+      <div class="tp-dots" id="tp-dots"></div>
+    </div>
+    <div class="tutorial-stage" id="tutorial-stage">
+      <!-- Pages injected by setupTutorial() -->
+    </div>
+    <div class="tutorial-foot">
+      <button class="btn-stencil" id="tut-skip">Skip Tutorial</button>
+      <div class="tut-page-indicator">
+        Page <span id="tut-cur">1</span> of <span id="tut-total">6</span>
+      </div>
+      <div class="tut-nav">
+        <button class="btn-stencil" id="tut-prev" disabled>← Back</button>
+        <button class="btn-hazard" id="tut-next">Next →</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- =================== PROFILE DRAG-DROP OVERLAY =================== -->
+<div class="profile-drop-overlay" id="profile-drop-overlay">
+  <div class="profile-drop-card">
+    <span class="profile-drop-icon">↓</span>
+    <div class="profile-drop-title">Drop to import profile</div>
+    <div class="profile-drop-sub">// .throttlr file detected</div>
+  </div>
+</div>
+
+<!-- =================== UPDATE AVAILABLE PROMPT =================== -->
+<div class="modal-overlay" id="update-modal" hidden>
+  <div class="modal modal-anim">
+    <div class="modal-corners"></div>
+    <div class="modal-head">
+      <span class="m-num icon" data-icon="zap"></span>
+      <h2>Update available</h2>
+      <button class="modal-close" data-close-modal="update-modal" id="update-close">×</button>
+    </div>
+    <div class="modal-body">
+      <div class="upd-version-row">
+        <div class="upd-version-block upd-current">
+          <span class="upd-label">You're on</span>
+          <span class="upd-tag" id="update-current-version">v—</span>
+        </div>
+        <span class="upd-arrow">→</span>
+        <div class="upd-version-block upd-latest">
+          <span class="upd-label">Latest</span>
+          <span class="upd-tag is-new" id="update-latest-version">v—</span>
+        </div>
+      </div>
+      <p class="hint-text" id="update-intro">
+        A new version of Throttlr is available on GitHub. Download and install it now?
+      </p>
+      <div class="upd-notes-wrap" id="update-notes-wrap" hidden>
+        <label class="field-label">What's in this release</label>
+        <pre class="upd-notes" id="update-notes"></pre>
+      </div>
+      <!-- Live install progress (v2.5.1) — hidden until user clicks "Yes, update now" -->
+      <div class="upd-progress-wrap" id="update-progress-wrap" hidden>
+        <div class="upd-progress-head">
+          <span class="upd-progress-phase" id="update-progress-phase">Starting…</span>
+          <span class="upd-progress-pct" id="update-progress-pct">0%</span>
+        </div>
+        <div class="upd-progress-bar">
+          <div class="upd-progress-fill" id="update-progress-fill" style="width:0%"></div>
+        </div>
+        <div class="upd-progress-meta" id="update-progress-meta">Preparing…</div>
+      </div>
+    </div>
+    <div class="modal-foot upd-foot">
+      <button class="btn-stencil" id="update-dismiss">Not now</button>
+      <button class="btn-hazard" id="update-apply">Yes, update now</button>
+    </div>
+  </div>
+</div>
+
+<!-- =================== UPDATE LOG / CHANGELOG =================== -->
+<div class="modal-overlay" id="changelog-modal" hidden>
+  <div class="modal modal-anim modal-wide">
+    <div class="modal-corners"></div>
+    <div class="modal-head">
+      <span class="m-num icon" data-icon="zap"></span>
+      <h2>What's New</h2>
+      <button class="modal-close" data-close-modal="changelog-modal" id="changelog-close">×</button>
+    </div>
+    <div class="modal-body">
+      <p class="hint-text" id="changelog-intro">
+        New stuff since you were here last —
+        <span id="changelog-version-line"></span>
+      </p>
+      <div class="changelog-list" id="changelog-list">
+        <div class="loading">Loading…</div>
+      </div>
+    </div>
+    <div class="modal-foot">
+      <button class="btn-hazard" id="changelog-dismiss">Got it</button>
+    </div>
+  </div>
+</div>
+
+<script src="worldmap-data.js"></script>
+<script src="anime.min.js"></script>
+<script src="app.js"></script>
+</body>
+</html>

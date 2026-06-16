@@ -1,0 +1,7 @@
+{
+  "name":        "Capture Logger",
+  "version":     "1.0.0",
+  "description": "Logs each capture start/stop to the console + shows a toast.",
+  "author":      "Throttlr team",
+  "throttlr_min": "3.0.0"
+}

@@ -1,0 +1,7 @@
+pydivert>=2.1.0
+psutil>=5.9.0
+PySide6>=6.5.0
+# PySide6 6.5+ ships with QWebEngineView and QWebChannel via PySide6-Addons.
+# If pip resolves only PySide6-Essentials and import fails for QtWebEngineWidgets,
+# install the addons explicitly:
+#     pip install PySide6-Addons
