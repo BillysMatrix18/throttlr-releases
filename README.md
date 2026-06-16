@@ -2,115 +2,74 @@
 
 **Per-application network throttler for Windows — by Billy's Matrix.**
 
-Selectively lag, drop, freeze, throttle, or block a single app's traffic. Same engine as before — now with a webview UI (HTML/CSS/JS rendered inside the app via embedded Chromium).
+Throttlr lets you lag, drop, throttle, freeze, or block a *single app's*
+network traffic — not your whole connection. Pick a process, choose what to do
+to it, and everything else keeps running untouched.
 
-## What it does
-
-Pick an app from the running-process list. Enable any combination of:
-
-- **Lag** — adds delay (with optional jitter) to packets
-- **Drop** — randomly drops a percentage of packets
-- **Throttle** — caps bandwidth (KB/s, token-bucket per direction)
-- **Freeze** — holds packets in a queue; release as a burst or replay slowly
-- **Block** — drops 100% of packets (instant disconnect)
-- **Fun** — chaos mode, randomizes effects on top of whatever's enabled
-
-Each function has independent **In / Out** direction controls.
-
-Live traffic graph, profile save/load, multiple themes (Industrial, Midnight Aurora, plus 5 community themes loadable from the themes repo), global hotkeys (F5/F8/F9/F10, rebindable).
-
-## Architecture
-
-```
-throttlr/
-├── throttlr.py        ← Backend + webview host (Python)
-├── ui/
-│   ├── index.html     ← UI structure
-│   ├── style.css      ← Glassmorphism + theme system
-│   ├── app.js         ← Frontend logic + bridge
-│   ├── qwebchannel.js ← Auto-extracted from Qt at first run
-│   ├── worldmap-data.js ← Geo map data for Connection Inspector
-│   └── throttlr-logo.png
-├── requirements.txt
-├── build.bat          ← Build single-file Throttlr.exe + installer
-├── run_as_admin.bat   ← Launch with auto-elevation
-└── throttlr.iss       ← Inno Setup installer script
-```
-
-The Python backend runs the network capture (via WinDivert/pydivert), exposes a
-`Bridge` object as a JS-callable API through Qt's `QWebChannel`. The frontend uses
-**Tailwind**, **Bootstrap**, **Shoelace**, and **animate.css** (loaded via CDN)
-on top of custom themed glassmorphism CSS.
-
-> **Note**: The UI loads CDN assets on first run (Tailwind, Bootstrap, Shoelace,
-> animate.css). After first launch they're cached by the embedded Chromium so
-> subsequent launches are instant. If you're behind a firewall that blocks
-> `cdn.jsdelivr.net` / `cdnjs.cloudflare.com`, the UI still renders but loses
-> the polish layer.
-
-## Requirements
-
-- Windows 7+
-- Python 3.10+ (for development only)
-- Administrator privileges (needed by WinDivert)
-- WinDivert driver (auto-installed by pydivert on first run)
-
-## Run from source
-
-```cmd
-pip install -r requirements.txt
-run_as_admin.bat
-```
-
-## Build a single .exe
-
-```cmd
-build.bat
-```
-
-Produces `dist\Throttlr.exe` (~80–150 MB — Chromium is bundled) and, if Inno
-Setup 6 is installed, `dist\Throttlr-Setup.exe` (the proper Windows installer).
-
-## Hotkeys (default)
-
-| Key  | Action       |
-|------|--------------|
-| F5   | Start/Stop   |
-| F8   | Freeze toggle|
-| F9   | Block toggle |
-| F10  | Fun mode     |
-
-Rebindable in **Settings → Hotkeys**. A killswitch hotkey is also available
-(no default binding — pick your own).
-
-## Notes on what actually works
-
-Lag-switch packet replay (the dramatic "snap-back" effect from old games) doesn't
-visibly affect modern apps — Discord/Zoom drop stale UDP via timestamped jitter
-buffers, modern multiplayer games (Valorant, Roblox, Minecraft Bedrock) reject
-out-of-sequence packets as cheats, VRChat extrapolates positions through Photon.
-
-What **does** work reliably:
-- **Block** — instant disconnect feel
-- **Drop** — visible packet loss / rubber-banding
-- **Lag** at short delays (50–300 ms) — noticeable lag without breaking the connection
-- **Throttle** — caps download/upload bandwidth predictably
-
-Long lag (>500 ms) and Freeze are most useful as a kill-switch — packets queue up,
-release fires a burst, but the receiving app may already have moved on.
-
-## Settings file location
-
-`%APPDATA%\Throttlr\settings.json` — also where profiles are saved. This folder
-survives uninstall, so your settings persist across reinstalls.
+This is the **public releases** repo. Grab the latest build below.
 
 ---
 
-## License
+## Download
 
-Throttlr is proprietary software. © 2026 Billy Papastavros. All rights reserved.
+➡️ **[Download the latest release](https://github.com/BillysMatrix18/throttlr-releases/releases/latest)**
 
-Unauthorized copying, modification, distribution, or reverse engineering is
-strictly prohibited.
+1. Download `Throttlr-Setup.exe` from the latest release.
+2. Run it. Windows SmartScreen may warn that the publisher isn't recognised —
+   this is normal for indie apps that aren't code-signed. Click
+   **More info → Run anyway**.
+3. When the admin (UAC) prompt appears, click **Yes**. Throttlr needs
+   administrator rights to intercept packets — it won't work without it.
 
-Made by **Billy's Matrix**.
+**Requirements:** 64-bit Windows 10 or 11. Nothing else to install.
+No account, no telemetry.
+
+---
+
+## What it does
+
+Pick an app from your running processes, then enable any combination of:
+
+- **Lag** — adds delay (with optional jitter) to its packets
+- **Drop** — randomly drops a percentage of its packets
+- **Throttle** — caps its bandwidth (KB/s)
+- **Freeze** — holds its packets, then releases them in a burst
+- **Block** — cuts its traffic entirely
+- **Fun** — chaos mode that mixes effects on top of whatever's enabled
+
+Each function has independent **In / Out** direction controls.
+
+Other features: a live traffic graph, a connection inspector and live map, a
+large library of one-click network scenarios (3G, congested wifi, satellite,
+high-ping, packet loss, and more), saveable presets you can export and share,
+multiple themes, and global hotkeys.
+
+---
+
+## Use it for
+
+- Testing how a game or app behaves on a bad connection (recreate 300ms ping,
+  simulate packet loss, cap a background download mid-stream)
+- QA on flaky-network conditions
+- Inspecting exactly what a process is talking to
+
+---
+
+## Is it safe?
+
+Throttlr is free, has no account system, and sends no telemetry. It needs
+administrator rights because intercepting network packets requires a kernel
+driver — that's the same reason tools like Clumsy and Wireshark ask for it.
+
+If your antivirus or SmartScreen flags it, that's because the installer isn't
+code-signed yet (signing certificates are expensive for a free indie tool), not
+because anything's wrong. You're welcome to scan the installer before running.
+
+---
+
+## Support
+
+Found a bug or have an idea? Open an issue on this repo, or use the in-app
+feedback form.
+
+*Throttlr is not affiliated with any app you can throttle.*
